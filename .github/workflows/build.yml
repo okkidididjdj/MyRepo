@@ -19,27 +19,30 @@ jobs:
         mkdir -p build-folder/Applications/iOS6Chat.app
         mkdir -p build-folder/DEBIAN
         
-        # Генерируем чистый control (версия 1.5.0)
+        # Генерируем чистый control (поднимаем версию до 1.6.0)
         cat << 'EOF' > build-folder/DEBIAN/control
         Package: com.okkidididjdj.ios6chat
         Name: iMessage iOS 6
-        Version: 1.5.0
+        Version: 1.6.0
         Architecture: iphoneos-arm
-        Description: Скевоморфный мессенджер. Полный фикс запуска на iOS 8.
+        Description: Скевоморфный мессенджер. Фикс регистрации иконки.
         Maintainer: okkidididjdj
         Author: okkidididjdj
         Section: Applications
         
         EOF
 
-        # Копируем файлы приложения
+        # Копируем веб-интерфейс
         cp Applications/iOS6Chat.app/index.html build-folder/Applications/iOS6Chat.app/
+        
+        # Дублируем иконки во всех возможных регистрах, чтобы iOS 8 их точно увидела
         cp CydiaIcon.png build-folder/Applications/iOS6Chat.app/icon.png || true
         cp CydiaIcon.png build-folder/Applications/iOS6Chat.app/icon@2x.png || true
         cp CydiaIcon.png build-folder/Applications/iOS6Chat.app/Icon.png || true
         cp CydiaIcon.png build-folder/Applications/iOS6Chat.app/Icon@2x.png || true
+        cp CydiaIcon.png build-folder/Applications/iOS6Chat.app/AppIcon60x60@2x.png || true
 
-        # СОЗДАЕМ ПРАВИЛЬНЫЙ INFO.PLIST ПРЯМО ТУТ (Возвращаем родной запуск)
+        # СОЗДАЕМ СТРОГИЙ INFO.PLIST
         cat << 'EOF' > build-folder/Applications/iOS6Chat.app/Info.plist
         <?xml version="1.0" encoding="UTF-8"?>
         <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -60,35 +63,36 @@ jobs:
             <key>CFBundleSignature</key>
             <string>????</string>
             <key>CFBundleSupportedPlatforms</key>
-            <array>
+                <array>
                 <string>iPhoneOS</string>
             </array>
             <key>CFBundleVersion</key>
-            <string>1.5</string>
+            <string>1.6</string>
             <key>LSRequiresIPhoneOS</key>
             <true/>
-            <key>UIStatusBarHidden</key>
-            <false/>
+            <key>UIDeviceFamily</key>
+            <array>
+                <integer>1</integer>
+            </array>
         </dict>
         </plist>
         EOF
 
-        # КРИТИЧЕСКИЙ ТРЮК ДЛЯ iOS 8 ДЛЯ ОБХОДА ВЫЛЕТА:
-        # Мы создаем bash-скрипт, но называем его "launch", а не именем приложения
-        echo -e '#!/bin/sh\nexec /usr/bin/uiopen "file:///Applications/iOS6Chat.app/index.html"' > build-folder/Applications/iOS6Chat.app/launch
-        
-        # А в качестве главного файла iOS6Chat мы подсовываем... пустой бинарный файл-обманку, 
-        # чтобы iOS думала, что это нативное приложение, и не скрывала иконку!
-        # А сам запуск мы перехватим через postinst скрипт джейлбрейка.
-        touch build-folder/Applications/iOS6Chat.app/iOS6Chat
+        # ЖЕЛЕЗНЫЙ ХАК ДЛЯ iOS 8:
+        # В качестве исполняемого файла мы создаем команду, которая симитирует нативный запуск через bash
+        echo -e '#!/bin/sh\n/usr/bin/uiopen "file:///Applications/iOS6Chat.app/index.html"' > build-folder/Applications/iOS6Chat.app/iOS6Chat
 
-        # Создаем скрипт послеустановочной настройки для обновления кэша иконок на айфоне
-        mkdir -p build-folder/DEBIAN
+        # Скрипт после установки, который ПРИНУДИТЕЛЬНО перезапустит рабочий стол
         cat << 'EOF' > build-folder/DEBIAN/postinst
         #!/bin/sh
-        chmod 6755 /Applications/iOS6Chat.app/launch
-        # Принудительно обновляем кэш иконок iOS, чтобы она не пропадала!
+        chmod 755 /Applications/iOS6Chat.app/iOS6Chat
+        
+        # Регистрируем приложение в системе
         su -c uicache mobile
+        
+        # Даем системе 2 секунды и мягко перезагружаем рабочий стол (Respring)
+        # Это заставит iOS 8 принудительно перерисовать экран и вывести иконку
+        (sleep 2 && killall SpringBoard) &
         exit 0
         EOF
 
@@ -98,7 +102,6 @@ jobs:
         chmod 755 build-folder/DEBIAN/postinst
         chmod 755 build-folder/Applications/iOS6Chat.app
         chmod 755 build-folder/Applications/iOS6Chat.app/iOS6Chat
-        chmod 755 build-folder/Applications/iOS6Chat.app/launch
         chmod 644 build-folder/Applications/iOS6Chat.app/Info.plist
         chmod 644 build-folder/Applications/iOS6Chat.app/index.html
 
@@ -111,9 +114,9 @@ jobs:
       run: |
         echo "Package: com.okkidididjdj.ios6chat" > Packages
         echo "Name: iMessage iOS 6" >> Packages
-        echo "Version: 1.5.0" >> Packages
+        echo "Version: 1.6.0" >> Packages
         echo "Architecture: iphoneos-arm" >> Packages
-        echo "Description: Скевоморфный мессенджер. Фикс иконки и вылетов на iOS 8." >> Packages
+        echo "Description: Скевоморфный мессенджер. Жесткий сброс кэша SpringBoard." >> Packages
         echo "Maintainer: okkidididjdj" >> Packages
         echo "Author: okkidididjdj" >> Packages
         echo "Section: Applications" >> Packages
@@ -129,7 +132,8 @@ jobs:
         git config --global user.name "GitHub Actions"
         git config --global user.email "actions@github.com"
         git add -f debs/ios6chat.brand.deb Packages Packages.bz2
-        git commit -m "Полный фикс для iOS 8 (v1.5.0)" || exit 0
+        git commit -m "Исправление регистрации иконки для iOS 8 (v1.6.0)" || exit 0
         git push origin main --force
+
 
 
