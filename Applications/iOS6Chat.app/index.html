@@ -5,142 +5,250 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>iMessage iOS 6</title>
     
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
     <style>
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        
+        /* Скевоморфный стиль iOS 6 */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
         body, html {
-            margin: 0; padding: 0;
-            width: 100%; height: 100%;
-            font-family: Helvetica, Arial, sans-serif;
-            background: #bcbfb4 url('https://reallinen.com/wp-content/uploads/2022/02/linen-texture-grey.jpg');
-            background-size: 100px;
-            display: flex; flex-direction: column;
+            height: 100%;
+            background: #cbd2d9 url('https://i.imgur.com/v8tZ89G.png'); /* Льняная текстура iOS */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Контейнер приложения */
+        .phone-screen {
+            width: 100%;
+            max-width: 480px;
+            height: 100%;
+            max-height: 100vh;
+            background: #d8dee5;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            box-shadow: 0 0 20px rgba(0,0,0,0.4);
             overflow: hidden;
         }
 
-        #authOverlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.6);
-            display: flex; align-items: center; justify-content: center;
-            z-index: 100; padding: 20px;
-        }
-
-        .auth-card {
-            width: 100%; max-width: 300px;
-            background: linear-gradient(to bottom, #f0f0f0 0%, #c8c8c8 100%);
-            border: 1px solid #707070; border-radius: 10px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.7);
-            padding: 20px; text-align: center;
-        }
-
-        .auth-card h2 {
-            color: #333; font-size: 18px; margin-top: 0; margin-bottom: 15px;
-            text-shadow: 0 1px 0 #fff;
-        }
-
-        .auth-input {
-            width: 100%; height: 34px; margin-bottom: 12px;
-            border-radius: 6px; border: 1px solid #999;
-            padding: 0 10px; font-size: 15px;
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.15);
-            outline: none; background: #fff;
-        }
-
-        .auth-buttons { display: flex; gap: 10px; margin-top: 5px; }
-
-        .btn {
-            flex: 1; height: 34px; border-radius: 6px; font-size: 14px;
-            font-weight: bold; cursor: pointer;
-        }
-        .btn-submit {
-            background: linear-gradient(to bottom, #5ba4eb 0%, #2173cf 50%, #175fbc 51%, #247cd9 100%);
-            border: 1px solid #134b94; color: white;
-            text-shadow: 0 -1px 0 rgba(0,0,0,0.5);
-            box-shadow: 0 1px 0 rgba(255,255,255,0.3) inset;
-        }
-        .btn-reg {
-            background: linear-gradient(to bottom, #ffffff 0%, #e0e0e0 50%, #d0d0d0 51%, #ededed 100%);
-            border: 1px solid #a0a0a0; color: #333;
-            text-shadow: 0 1px 0 #fff;
-            box-shadow: 0 1px 0 rgba(255,255,255,0.5) inset;
-        }
-
+        /* Навигационный бар в стиле iOS 6 (глянцевый сине-серый) */
         .nav-bar {
             height: 44px;
-            background: linear-gradient(to bottom, #74849a 0%, #4c5c74 50%, #3b4c64 51%, #44546d 100%);
-            border-bottom: 1px solid #2d3745;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
-            display: flex; align-items: center; justify-content: center;
-            position: relative; z-index: 10;
-        }
-        .nav-bar h1 {
-            color: #fff; font-size: 18px; font-weight: bold;
-            text-shadow: 0 -1px 0 rgba(0,0,0,0.6); margin: 0;
-        }
-
-        .chat-container {
-            flex: 1; overflow-y: scroll; padding: 15px;
-            display: flex; flex-direction: column; -webkit-overflow-scrolling: touch;
+            background: linear-gradient(to bottom, #768a9b 0%, #3b5066 50%, #2b3e54 51%, #2c4055 100%);
+            border-bottom: 1px solid #1a2531;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 20px;
+            text-shadow: 0 -1px 0 rgba(0,0,0,0.6);
+            position: relative;
+            flex-shrink: 0;
         }
 
-        .message {
-            max-width: 75%; padding: 8px 14px; border-radius: 15px;
-            margin-bottom: 10px; font-size: 15px; line-height: 1.4;
-            position: relative; text-shadow: 0 1px 0 rgba(255,255,255,0.2);
-            box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+        /* Контентная зона */
+        .content {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
         }
-        .message.received {
-            background: linear-gradient(to bottom, #fcfcfc 0%, #e6e6e6 100%);
-            border: 1px solid #b8b8b8; color: #000; align-self: flex-start;
-        }
-        .message.sent {
-            background: linear-gradient(to bottom, #a3f167 0%, #76db2a 50%, #5cd00a 51%, #6fe019 100%);
-            border: 1px solid #53b302; color: #fff; align-self: flex-end;
-            text-shadow: 0 -1px 0 rgba(0,0,0,0.3);
-        }
-        .author { font-size: 10px; font-weight: bold; color: rgba(0,0,0,0.5); margin-bottom: 3px; display: block; }
-        .message.sent .author { color: rgba(255,255,255,0.7); text-shadow: none; }
 
-        .input-bar {
-            height: 44px; background: linear-gradient(to bottom, #e0e0e0 0%, #a8a8a8 100%);
-            border-top: 1px solid #8e8e8e; display: flex; align-items: center; padding: 0 8px; gap: 8px;
+        /* Стилизованная группа полей iOS 6 Rounded Grouped Cell */
+        .login-group {
+            background: white;
+            border: 1px solid #ababab;
+            border-radius: 10px;
+            box-shadow: 0 1px 1px rgba(255,255,255,0.8);
+            margin-bottom: 20px;
+            overflow: hidden;
         }
-        .input-bar input {
-            flex: 1; height: 30px; border-radius: 15px; border: 1px solid #9c9c9c;
-            padding: 0 12px; font-size: 15px; box-shadow: inset 0 1px 3px rgba(0,0,0,0.2); outline: none; background: #fff;
+
+        .input-row {
+            display: flex;
+            align-items: center;
+            padding: 12px 15px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .input-row:last-child {
+            border-bottom: none;
+        }
+
+        .input-row label {
+            width: 80px;
+            color: #385487;
+            font-weight: bold;
+            font-size: 15px;
+        }
+
+        .input-row input {
+            flex: 1;
+            border: none;
+            outline: none;
+            font-size: 16px;
+            color: #000;
+        }
+
+        /* Глянцевые кнопки iOS 6 */
+        .btn {
+            width: 100%;
+            height: 44px;
+            border-radius: 8px;
+            border: 1px solid #1a2531;
+            font-size: 16px;
+            font-weight: bold;
+            color: white;
+            text-shadow: 0 -1px 0 rgba(0,0,0,0.6);
+            cursor: pointer;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.4), 0 1px 2px rgba(0,0,0,0.2);
+            margin-bottom: 12px;
+        }
+
+        .btn-blue {
+            background: linear-gradient(to bottom, #5cb1ec 0%, #1770cd 50%, #0d5cb9 51%, #126dc6 100%);
+            border-color: #0b458c;
+        }
+
+        .btn-blue:active {
+            background: linear-gradient(to bottom, #126dc6 0%, #0d5cb9 50%, #1770cd 100%);
+        }
+
+        .btn-silver {
+            background: linear-gradient(to bottom, #f9f9f9 0%, #bcbcbc 50%, #a8a8a8 51%, #b8b8b8 100%);
+            border-color: #707070;
+            color: #333;
+            text-shadow: 0 1px 0 rgba(255,255,255,0.8);
+        }
+
+        .btn-silver:active {
+            background: linear-gradient(to bottom, #b8b8b8 0%, #a8a8a8 50%, #f9f9f9 100%);
+        }
+
+        /* Окно системного уведомления (Alert) в стиле iOS 6 */
+        .ios-alert-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.4);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        .ios-alert {
+            width: 270px;
+            background: linear-gradient(to bottom, rgba(30,42,66,0.92) 0%, rgba(15,24,44,0.92) 100%);
+            border: 2px solid #a1b4cd;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.3);
+            color: white;
+            text-align: center;
+            padding-top: 20px;
+            overflow: hidden;
+        }
+
+        .ios-alert-title {
+            font-weight: bold;
+            font-size: 17px;
+            margin-bottom: 5px;
+            padding: 0 15px;
+        }
+
+        .ios-alert-message {
+            font-size: 14px;
+            margin-bottom: 20px;
+            padding: 0 15px;
+            color: #dfdfdf;
+        }
+
+        .ios-alert-btn {
+            height: 44px;
+            border-top: 1px solid rgba(255,255,255,0.2);
+            background: linear-gradient(to bottom, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 17px;
+            color: #4ba6ff;
+            cursor: pointer;
+        }
+
+        .ios-alert-btn:active {
+            background: rgba(255,255,255,0.2);
+        }
+
+        /* Экран самого чата (скрыт по умолчанию) */
+        #chat-screen {
+            display: none;
         }
     </style>
 </head>
 <body>
 
-    <div id="authOverlay">
-        <div class="auth-card">
-            <h2>Вход в iMessage</h2>
-            <input type="text" id="usernameInput" class="auth-input" placeholder="Имя (Nickname)">
-            <input type="password" id="pinInput" class="auth-input" placeholder="Пин-код (Цифры)">
-            <div class="auth-buttons">
-                <button class="btn btn-reg" onclick="registerUser()">Рег.</button>
-                <button class="btn btn-submit" onclick="loginUser()">Войти</button>
+    <div class="phone-screen">
+        
+        <div id="auth-screen" style="display: flex; flex-direction: column; height: 100%;">
+            <div class="nav-bar">iMessage</div>
+            <div class="content">
+                <div style="text-align: center; margin: 20px 0 30px 0;">
+                    <img src="https://i.imgur.com/K6YwI8F.png" alt="iMessage" style="width: 75px; height: 75px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
+                </div>
+
+                <div class="login-group">
+                    <div class="input-row">
+                        <label for="username">Имя (Ник)</label>
+                        <input type="text" id="username" placeholder="Пример: alex777" autocomplete="off">
+                    </div>
+                    <div class="input-row">
+                        <label for="email">E-mail</label>
+                        <input type="email" id="email" placeholder="example@mail.com" autocomplete="off">
+                    </div>
+                    <div class="input-row">
+                        <label for="password">Пароль</label>
+                        <input type="password" id="password" placeholder="Минимум 6 знаков">
+                    </div>
+                </div>
+
+                <button class="btn btn-blue" id="btn-login">Войти в аккаунт</button>
+                <button class="btn btn-silver" id="btn-register">Зарегистрироваться</button>
             </div>
         </div>
-    </div>
 
-    <div class="nav-bar">
-        <h1 id="chat-title">iMessage (iOS 6)</h1>
-    </div>
+        <div id="chat-screen" style="flex-direction: column; height: 100%;">
+            <div class="nav-bar" id="chat-title">Чат</div>
+            <div class="content">
+                <h3 style="text-align: center; color: #555; margin-top: 50px;">Вы успешно вошли!</h3>
+                <p id="welcome-msg" style="text-align: center; color: #333; margin-top: 10px; font-weight: bold;"></p>
+                <button class="btn btn-silver" id="btn-logout" style="margin-top: 30px;">Выйти</button>
+            </div>
+        </div>
 
-    <div class="chat-container" id="chatContainer"></div>
+        <div class="ios-alert-overlay" id="custom-alert">
+            <div class="ios-alert">
+                <div class="ios-alert-title" id="alert-title">Уведомление</div>
+                <div class="ios-alert-message" id="alert-message">Текст сообщения.</div>
+                <div class="ios-alert-btn" onclick="closeAlert()">OK</div>
+            </div>
+        </div>
 
-    <div class="input-bar">
-        <input type="text" id="msgInput" placeholder="Ваше сообщение..." onkeypress="handleKeyPress(event)">
-        <button class="btn btn-submit" style="height:30px; flex:none; padding:0 15px;" onclick="sendMessage()">Отправ.</button>
     </div>
 
     <script>
-        const firebaseConfig = {
+        // Твои настройки Firebase конфигурации
+        var firebaseConfig = {
             apiKey: "AIzaSyBcD_k_Y9xfmdeXiXWmgf-Q7Xb4_XwDg-M",
             authDomain: "fa-game1.firebaseapp.com",
             databaseURL: "https://fa-game1-default-rtdb.europe-west1.firebasedatabase.app",
@@ -148,86 +256,108 @@
             storageBucket: "fa-game1.firebasestorage.app",
             messagingSenderId: "667950401953",
             appId: "1:667950401953:web:659f0dfa90b20d649523e0"
-         };
-        
+        };
+
+        // Инициализируем библиотеки через глобальные Compat-объекты
         firebase.initializeApp(firebaseConfig);
-        const database = firebase.database();
-        let currentUsername = "";
+        var auth = firebase.auth();
+        var database = firebase.database();
 
-        function registerUser() {
-            const user = document.getElementById('usernameInput').value.trim();
-            const pin = document.getElementById('pinInput').value.trim();
-            if(!user || !pin) return alert("Заполните все поля!");
+        // Кастомная функция вывода красивых алертов вместо стандартных браузерных
+        function showAlert(title, message) {
+            document.getElementById('alert-title').innerText = title;
+            document.getElementById('alert-message').innerText = message;
+            document.getElementById('custom-alert').style.display = 'flex';
+        }
 
-            database.ref('users/' + user).once('value', (snapshot) => {
-                if(snapshot.exists()) {
-                    alert("Это имя уже занято!");
+        function closeAlert() {
+            document.getElementById('custom-alert').style.display = 'none';
+        }
+
+        // --- КНОПКА: РЕГИСТРАЦИЯ НОВОГО ПОЛЬЗОВАТЕЛЯ ---
+        document.getElementById('btn-register').addEventListener('click', function() {
+            var username = document.getElementById('username').value.trim();
+            var email = document.getElementById('email').value.trim();
+            var password = document.getElementById('password').value;
+
+            if (!username || !email || !password) {
+                showAlert("Ошибка", "Заполните все три поля формы!");
+                return;
+            }
+
+            // Проверяем, свободен ли никнейм в Realtime Database
+            database.ref('users').orderByChild('username').equalTo(username).once('value', function(snapshot) {
+                if (snapshot.exists()) {
+                    showAlert("Имя занято", "Пользователь с таким никнеймом уже зарегистрирован.");
                 } else {
-                    database.ref('users/' + user).set({ pin: pin }, (error) => {
-                        if(!error) alert("Успешная регистрация! Теперь нажмите Войти.");
+                    // Если ник свободен, создаем аккаунт в Auth
+                    auth.createUserWithEmailAndPassword(email, password)
+                    .then(function(userCredential) {
+                        var user = userCredential.user;
+                        
+                        // Записываем информацию о пользователе в узел 'users/UID'
+                        database.ref('users/' + user.uid).set({
+                            username: username,
+                            email: email
+                        }).then(function() {
+                            showAlert("Успех!", "Вы успешно зарегистрировались!");
+                        });
+                    })
+                    .catch(function(error) {
+                        showAlert("Ошибка создания", error.message);
                     });
                 }
             });
-        }
+        });
 
-        function loginUser() {
-            const user = document.getElementById('usernameInput').value.trim();
-            const pin = document.getElementById('pinInput').value.trim();
-            if(!user || !pin) return alert("Заполните все поля!");
+        // --- КНОПКА: ВХОД В АККАУНТ ---
+        document.getElementById('btn-login').addEventListener('click', function() {
+            var email = document.getElementById('email').value.trim();
+            var password = document.getElementById('password').value;
 
-            database.ref('users/' + user).once('value', (snapshot) => {
-                const userData = snapshot.val();
-                if(userData && userData.pin === pin) {
-                    currentUsername = user;
-                    document.getElementById('chat-title').innerText = "iMessage: " + currentUsername;
-                    document.getElementById('authOverlay').style.display = 'none';
-                    startChatListening();
-                } else {
-                    alert("Неверное имя или пин-код!");
-                }
-            });
-        }
-
-        function startChatListening() {
-            database.ref('messages').limitToLast(50).on('child_added', (snapshot) => {
-                const data = snapshot.val();
-                displayMessage(data.sender, data.text);
-            });
-        }
-
-        function sendMessage() {
-            const input = document.getElementById('msgInput');
-            const text = input.value.trim();
-            if (text !== "" && currentUsername !== "") {
-                database.ref('messages').push({
-                    sender: currentUsername,
-                    text: text,
-                    timestamp: Date.now()
-                });
-                input.value = "";
+            if (!email || !password) {
+                showAlert("Ошибка", "Введите E-mail и пароль для входа!");
+                return;
             }
-        }
 
-        function handleKeyPress(event) {
-            if (event.key === 'Enter') sendMessage();
-        }
+            auth.signInWithEmailAndPassword(email, password)
+            .then(function(userCredential) {
+                showAlert("Авторизация", "Добро пожаловать назад!");
+            })
+            .catch(function(error) {
+                showAlert("Ошибка входа", "Неверный e-mail или пароль.");
+            });
+        });
 
-        function displayMessage(sender, text) {
-            const container = document.getElementById('chatContainer');
-            const msgDiv = document.createElement('div');
-            const isMe = (sender === currentUsername);
+        // --- СЛУШАТЕЛЬ СОСТОЯНИЯ СЕССИИ (Вошел пользователь или нет) ---
+        auth.onAuthStateChanged(function(user) {
+            var authScreen = document.getElementById('auth-screen');
+            var chatScreen = document.getElementById('chat-screen');
             
-            msgDiv.className = `message ${isMe ? 'sent' : 'received'}`;
-            
-            const authorSpan = document.createElement('span');
-            authorSpan.className = 'author';
-            authorSpan.innerText = sender;
-            
-            msgDiv.appendChild(authorSpan);
-            msgDiv.appendChild(document.createTextNode(text));
-            container.appendChild(msgDiv);
-            container.scrollTop = container.scrollHeight;
-        }
+            if (user) {
+                // Если пользователь залогинен, достаем его Ник из базы
+                database.ref('users/' + user.uid).once('value', function(snapshot) {
+                    var userData = snapshot.val();
+                    var currentName = (userData && userData.username) ? userData.username : "Пользователь";
+                    
+                    document.getElementById('welcome-msg').innerText = "Ваш ник: " + currentName;
+                    document.getElementById('chat-title').innerText = currentName;
+                    
+                    authScreen.style.display = 'none';
+                    chatScreen.style.display = 'flex';
+                });
+            } else {
+                // Если не залогинен, возвращаем форму входа
+                authScreen.style.display = 'flex';
+                chatScreen.style.display = 'none';
+            }
+        });
+
+        // --- КНОПКА: ВЫХОД ИЗ ПРОФИЛЯ ---
+        document.getElementById('btn-logout').addEventListener('click', function() {
+            auth.signOut();
+        });
     </script>
 </body>
 </html>
+
