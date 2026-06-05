@@ -71,10 +71,19 @@ jobs:
         
         bzip2 -c Packages > Packages.bz2
 
-    - name: Commit and Push changes
+- name: Commit and Push changes
       run: |
         git config --global user.name "GitHub Actions"
         git config --global user.email "actions@github.com"
-        git add debs/ios6chat.brand.deb Packages Packages.bz2
+        
+        # Проверяем, изменилось ли что-то, чтобы не вызывать пустых ошибок
+        git status
+        
+        # Силой добавляем только то, что нам нужно для Cydia
+        git add -f debs/ios6chat.brand.deb Packages Packages.bz2
+        
+        # Фиксируем изменения
         git commit -m "Сборка нативного приложения для iOS 8" || exit 0
-        git push
+        
+        # Пушим напрямую в ветку main с флагом --force, если сервер тупит
+        git push origin main --force
