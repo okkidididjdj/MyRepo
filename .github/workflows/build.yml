@@ -13,54 +13,46 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v3
 
-    # Устанавливаем компилятор, который умеет собирать бинарники под ARM (процессоры iPhone)
-    - name: Install iOS Toolchain Components
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y gcc-arm-linux-gnueabi bzip2
-
     - name: Prepare Package Structure
       run: |
+        # Создаем структуру заново
         mkdir -p build-folder/Applications/iOS6Chat.app
         mkdir -p build-folder/DEBIAN
         
-        # Копируем control, plist и html
+        # Копируем метаданные
         cp DEBIAN/control build-folder/DEBIAN/
         cp Applications/iOS6Chat.app/Info.plist build-folder/Applications/iOS6Chat.app/
         cp Applications/iOS6Chat.app/index.html build-folder/Applications/iOS6Chat.app/
-        
-        # На iOS 8 картинка ДОЛЖНА быть в самом приложении для иконки
         cp CydiaIcon.png build-folder/Applications/iOS6Chat.app/icon.png || true
         cp CydiaIcon.png build-folder/Applications/iOS6Chat.app/icon@2x.png || true
 
-    # КРИТИЧЕСКИЙ ШАГ ДЛЯ iOS 8: Компилируем настоящий бинарник на C, который откроет наш HTML
-    - name: Compile iOS 8 Native Binary
-      run: |
-        cat << 'EOF' > launcher.c
-        #include <stdlib.h>
-        #include <unistd.h>
-        int main(int argc, char *argv[]) {
-            // Используем системную команду uiopen для запуска локального HTML в обход песочницы
-            execl("/usr/bin/uiopen", "uiopen", "file:///Applications/iOS6Chat.app/index.html", NULL);
-            return 0;
-        }
-        EOF
-        # Компилируем под архитектуру armv7 (процессор Apple A5 в iPhone 4s)
-        arm-linux-gnueabi-gcc launcher.c -o build-folder/Applications/iOS6Chat.app/iOS6Chat -static
-        chmod +x build-folder/Applications/iOS6Chat.app/iOS6Chat
+        # Вместо кривого бинарника делаем нативный трюк: 
+        # Переименовываем index.html в запускной файл, а в Info.plist (Шаг ниже) укажем правильный тип!
+        # Но пока просто сделаем текстовую заглушку-запуск, которую iOS 8 переварит:
+        echo -e '#!/bin/sh\nexec /usr/bin/uiopen "file:///Applications/iOS6Chat.app/index.html"' > build-folder/Applications/iOS6Chat.app/iOS6Chat
+
+        # ЖЕСТКАЯ НАСТРОЙКА ПРАВ ДОСТУПА ДЛЯ iOS (Решает exit status 2)
+        # Все файлы должны принадлежать root (пользователь 0, группа 0)
+        chmod 755 build-folder/DEBIAN
+        chmod 644 build-folder/DEBIAN/control
+        chmod 755 build-folder/Applications/iOS6Chat.app
+        chmod 755 build-folder/Applications/iOS6Chat.app/iOS6Chat
+        chmod 644 build-folder/Applications/iOS6Chat.app/Info.plist
+        chmod 644 build-folder/Applications/iOS6Chat.app/index.html
 
     - name: Build .deb Package
       run: |
         mkdir -p debs
-        dpkg-deb --build build-folder debs/ios6chat.brand.deb
+        # Собираем пакет с принудительным сбросом владельца на root:root
+        dpkg-deb --root-owner-group --build build-folder debs/ios6chat.brand.deb
 
     - name: Update Cydia Indexes
       run: |
         echo "Package: com.okkidididjdj.ios6chat" > Packages
         echo "Name: iMessage iOS 6" >> Packages
-        echo "Version: 1.1.0" >> Packages
+        echo "Version: 1.2.0" >> Packages
         echo "Architecture: iphoneos-arm" >> Packages
-        echo "Description: Скевоморфный мессенджер. Адаптировано под iOS 8!" >> Packages
+        echo "Description: Скевоморфный мессенджер. Фикс прав iOS 8." >> Packages
         echo "Maintainer: okkidididjdj" >> Packages
         echo "Author: okkidididjdj" >> Packages
         echo "Section: Applications" >> Packages
@@ -71,19 +63,10 @@ jobs:
         
         bzip2 -c Packages > Packages.bz2
 
-- name: Commit and Push changes
+    - name: Commit and Push changes
       run: |
         git config --global user.name "GitHub Actions"
         git config --global user.email "actions@github.com"
-        
-        # Проверяем, изменилось ли что-то, чтобы не вызывать пустых ошибок
-        git status
-        
-        # Силой добавляем только то, что нам нужно для Cydia
         git add -f debs/ios6chat.brand.deb Packages Packages.bz2
-        
-        # Фиксируем изменения
-        git commit -m "Сборка нативного приложения для iOS 8" || exit 0
-        
-        # Пушим напрямую в ветку main с флагом --force, если сервер тупит
+        git commit -m "Фикс прав доступа под iOS 8" || exit 0
         git push origin main --force
