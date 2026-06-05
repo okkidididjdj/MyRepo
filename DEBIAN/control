@@ -2,7 +2,7 @@ Package: com.okkidididjdj.ios6chat
 Name: iMessage iOS 6
 Version: 1.0.0
 Architecture: iphoneos-arm
-Description: Крутой скевоморфный мессенджер с базой Firebase!
+Description: Крутой мессенджер!
 Maintainer: okkidididjdj
 Author: okkidididjdj
 Section: Applications
