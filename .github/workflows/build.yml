@@ -1,4 +1,4 @@
-name: Automated Cydia Repo Builder
+name: Automated Cydia Repo Builder for iOS 8
 
 on:
   push:
@@ -13,16 +13,40 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v3
 
+    # Устанавливаем компилятор, который умеет собирать бинарники под ARM (процессоры iPhone)
+    - name: Install iOS Toolchain Components
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y gcc-arm-linux-gnueabi bzip2
+
     - name: Prepare Package Structure
       run: |
-        mkdir -p build-folder/DEBIAN
         mkdir -p build-folder/Applications/iOS6Chat.app
+        mkdir -p build-folder/DEBIAN
         
+        # Копируем control, plist и html
         cp DEBIAN/control build-folder/DEBIAN/
         cp Applications/iOS6Chat.app/Info.plist build-folder/Applications/iOS6Chat.app/
-        cp Applications/iOS6Chat.app/iOS6Chat build-folder/Applications/iOS6Chat.app/
         cp Applications/iOS6Chat.app/index.html build-folder/Applications/iOS6Chat.app/
         
+        # На iOS 8 картинка ДОЛЖНА быть в самом приложении для иконки
+        cp CydiaIcon.png build-folder/Applications/iOS6Chat.app/icon.png || true
+        cp CydiaIcon.png build-folder/Applications/iOS6Chat.app/icon@2x.png || true
+
+    # КРИТИЧЕСКИЙ ШАГ ДЛЯ iOS 8: Компилируем настоящий бинарник на C, который откроет наш HTML
+    - name: Compile iOS 8 Native Binary
+      run: |
+        cat << 'EOF' > launcher.c
+        #include <stdlib.h>
+        #include <unistd.h>
+        int main(int argc, char *argv[]) {
+            // Используем системную команду uiopen для запуска локального HTML в обход песочницы
+            execl("/usr/bin/uiopen", "uiopen", "file:///Applications/iOS6Chat.app/index.html", NULL);
+            return 0;
+        }
+        EOF
+        # Компилируем под архитектуру armv7 (процессор Apple A5 в iPhone 4s)
+        arm-linux-gnueabi-gcc launcher.c -o build-folder/Applications/iOS6Chat.app/iOS6Chat -static
         chmod +x build-folder/Applications/iOS6Chat.app/iOS6Chat
 
     - name: Build .deb Package
@@ -34,9 +58,9 @@ jobs:
       run: |
         echo "Package: com.okkidididjdj.ios6chat" > Packages
         echo "Name: iMessage iOS 6" >> Packages
-        echo "Version: 1.0.0" >> Packages
+        echo "Version: 1.1.0" >> Packages
         echo "Architecture: iphoneos-arm" >> Packages
-        echo "Description: Крутой скевоморфный мессенджер с базой Firebase!" >> Packages
+        echo "Description: Скевоморфный мессенджер. Адаптировано под iOS 8!" >> Packages
         echo "Maintainer: okkidididjdj" >> Packages
         echo "Author: okkidididjdj" >> Packages
         echo "Section: Applications" >> Packages
@@ -52,5 +76,5 @@ jobs:
         git config --global user.name "GitHub Actions"
         git config --global user.email "actions@github.com"
         git add debs/ios6chat.brand.deb Packages Packages.bz2
-        git commit -m "Авто-сборка пакета и обновление индексов" || exit 0
+        git commit -m "Сборка нативного приложения для iOS 8" || exit 0
         git push
