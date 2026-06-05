@@ -5,7 +5,7 @@
     <key>CFBundleDevelopmentRegion</key>
     <string>English</string>
     <key>CFBundleExecutable</key>
-    <string>iOS6Chat</string>
+    <string>WebSheet</string>
     <key>CFBundleIdentifier</key>
     <string>com.okkidididjdj.ios6chat</string>
     <key>CFBundleInfoDictionaryVersion</key>
