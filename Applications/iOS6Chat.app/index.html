@@ -7,7 +7,7 @@
     
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
     <style>
         /* Скевоморфный стиль iOS 6 */
@@ -21,13 +21,12 @@
 
         body, html {
             height: 100%;
-            background: #cbd2d9 url('https://i.imgur.com/v8tZ89G.png'); /* Льняная текстура iOS */
+            background: #cbd2d9 url('https://i.imgur.com/v8tZ89G.png'); /* Текстура льна */
             display: flex;
             justify-content: center;
             align-items: center;
         }
 
-        /* Контейнер приложения */
         .phone-screen {
             width: 100%;
             max-width: 480px;
@@ -41,7 +40,7 @@
             overflow: hidden;
         }
 
-        /* Навигационный бар в стиле iOS 6 (глянцевый сине-серый) */
+        /* Глянцевый бар iOS 6 */
         .nav-bar {
             height: 44px;
             background: linear-gradient(to bottom, #768a9b 0%, #3b5066 50%, #2b3e54 51%, #2c4055 100%);
@@ -58,14 +57,13 @@
             flex-shrink: 0;
         }
 
-        /* Контентная зона */
         .content {
             flex: 1;
             padding: 20px;
             overflow-y: auto;
         }
 
-        /* Стилизованная группа полей iOS 6 Rounded Grouped Cell */
+        /* Закругленные группы ячеек (Grouped Table View) */
         .login-group {
             background: white;
             border: 1px solid #ababab;
@@ -101,7 +99,7 @@
             color: #000;
         }
 
-        /* Глянцевые кнопки iOS 6 */
+        /* Кнопки */
         .btn {
             width: 100%;
             height: 44px;
@@ -136,7 +134,7 @@
             background: linear-gradient(to bottom, #b8b8b8 0%, #a8a8a8 50%, #f9f9f9 100%);
         }
 
-        /* Окно системного уведомления (Alert) в стиле iOS 6 */
+        /* Системный iOS 6 Алерт */
         .ios-alert-overlay {
             position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
@@ -190,7 +188,6 @@
             background: rgba(255,255,255,0.2);
         }
 
-        /* Экран самого чата (скрыт по умолчанию) */
         #chat-screen {
             display: none;
         }
@@ -210,15 +207,15 @@
                 <div class="login-group">
                     <div class="input-row">
                         <label for="username">Имя (Ник)</label>
-                        <input type="text" id="username" placeholder="Пример: alex777" autocomplete="off">
+                        <input type="text" id="username" placeholder="Например: admin" autocomplete="off">
                     </div>
                     <div class="input-row">
                         <label for="email">E-mail</label>
-                        <input type="email" id="email" placeholder="example@mail.com" autocomplete="off">
+                        <input type="email" id="email" placeholder="mail@example.com" autocomplete="off">
                     </div>
                     <div class="input-row">
                         <label for="password">Пароль</label>
-                        <input type="password" id="password" placeholder="Минимум 6 знаков">
+                        <input type="password" id="password" placeholder="От 6 символов">
                     </div>
                 </div>
 
@@ -230,7 +227,7 @@
         <div id="chat-screen" style="flex-direction: column; height: 100%;">
             <div class="nav-bar" id="chat-title">Чат</div>
             <div class="content">
-                <h3 style="text-align: center; color: #555; margin-top: 50px;">Вы успешно вошли!</h3>
+                <h3 style="text-align: center; color: #555; margin-top: 50px;">Вы вошли!</h3>
                 <p id="welcome-msg" style="text-align: center; color: #333; margin-top: 10px; font-weight: bold;"></p>
                 <button class="btn btn-silver" id="btn-logout" style="margin-top: 30px;">Выйти</button>
             </div>
@@ -238,8 +235,8 @@
 
         <div class="ios-alert-overlay" id="custom-alert">
             <div class="ios-alert">
-                <div class="ios-alert-title" id="alert-title">Уведомление</div>
-                <div class="ios-alert-message" id="alert-message">Текст сообщения.</div>
+                <div class="ios-alert-title" id="alert-title">Ошибка</div>
+                <div class="ios-alert-message" id="alert-message">Текст.</div>
                 <div class="ios-alert-btn" onclick="closeAlert()">OK</div>
             </div>
         </div>
@@ -247,7 +244,7 @@
     </div>
 
     <script>
-        // Твои настройки Firebase конфигурации
+        // Твоя конфигурация Firebase
         var firebaseConfig = {
             apiKey: "AIzaSyBcD_k_Y9xfmdeXiXWmgf-Q7Xb4_XwDg-M",
             authDomain: "fa-game1.firebaseapp.com",
@@ -258,12 +255,12 @@
             appId: "1:667950401953:web:659f0dfa90b20d649523e0"
         };
 
-        // Инициализируем библиотеки через глобальные Compat-объекты
+        // Инициализируем компоненты через Compat слои
         firebase.initializeApp(firebaseConfig);
         var auth = firebase.auth();
-        var database = firebase.database();
+        var db = firebase.firestore();
 
-        // Кастомная функция вывода красивых алертов вместо стандартных браузерных
+        // Кастомные алерты iOS 6
         function showAlert(title, message) {
             document.getElementById('alert-title').innerText = title;
             document.getElementById('alert-message').innerText = message;
@@ -274,90 +271,104 @@
             document.getElementById('custom-alert').style.display = 'none';
         }
 
-        // --- КНОПКА: РЕГИСТРАЦИЯ НОВОГО ПОЛЬЗОВАТЕЛЯ ---
+        // --- ЛОГИКА: РЕГИСТРАЦИЯ В CLOUD FIRESTORE ---
         document.getElementById('btn-register').addEventListener('click', function() {
             var username = document.getElementById('username').value.trim();
             var email = document.getElementById('email').value.trim();
             var password = document.getElementById('password').value;
 
             if (!username || !email || !password) {
-                showAlert("Ошибка", "Заполните все три поля формы!");
+                showAlert("Внимание", "Заполните все доступные поля!");
                 return;
             }
 
-            // Проверяем, свободен ли никнейм в Realtime Database
-            database.ref('users').orderByChild('username').equalTo(username).once('value', function(snapshot) {
-                if (snapshot.exists()) {
-                    showAlert("Имя занято", "Пользователь с таким никнеймом уже зарегистрирован.");
+            // Проверяем в Firestore коллекции 'users', занят ли этот никнейм
+            db.collection("users").where("username", "==", username).get()
+            .then(function(querySnapshot) {
+                if (!querySnapshot.empty) {
+                    showAlert("Имя занято", "Пользователь с таким никнеймом уже существует.");
                 } else {
-                    // Если ник свободен, создаем аккаунт в Auth
+                    // Если ник свободен, регистрируем почту и пароль в Auth
                     auth.createUserWithEmailAndPassword(email, password)
                     .then(function(userCredential) {
                         var user = userCredential.user;
                         
-                        // Записываем информацию о пользователе в узел 'users/UID'
-                        database.ref('users/' + user.uid).set({
+                        // Сохраняем документ пользователя в Firestore: коллекция 'users', ID документа = UID юзера
+                        db.collection("users").doc(user.uid).set({
                             username: username,
-                            email: email
-                        }).then(function() {
-                            showAlert("Успех!", "Вы успешно зарегистрировались!");
+                            email: email,
+                            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                        })
+                        .then(function() {
+                            showAlert("Успех!", "Вы успешно создали аккаунт!");
                         });
                     })
                     .catch(function(error) {
-                        showAlert("Ошибка создания", error.message);
+                        showAlert("Ошибка Auth", error.message);
                     });
                 }
+            })
+            .catch(function(error) {
+                showAlert("Ошибка базы", "Не удалось проверить ник: " + error.message);
             });
         });
 
-        // --- КНОПКА: ВХОД В АККАУНТ ---
+        // --- ЛОГИКА: ВХОД В АККАУНТ ---
         document.getElementById('btn-login').addEventListener('click', function() {
             var email = document.getElementById('email').value.trim();
             var password = document.getElementById('password').value;
 
             if (!email || !password) {
-                showAlert("Ошибка", "Введите E-mail и пароль для входа!");
+                showAlert("Ошибка", "Введите свои E-mail и пароль!");
                 return;
             }
 
             auth.signInWithEmailAndPassword(email, password)
             .then(function(userCredential) {
-                showAlert("Авторизация", "Добро пожаловать назад!");
+                showAlert("iMessage", "Вход выполнен успешно!");
             })
             .catch(function(error) {
-                showAlert("Ошибка входа", "Неверный e-mail или пароль.");
+                showAlert("Ошибка входа", "Неверный логин или пароль.");
             });
         });
 
-        // --- СЛУШАТЕЛЬ СОСТОЯНИЯ СЕССИИ (Вошел пользователь или нет) ---
+        // --- СЛУШАТЕЛЬ СОСТОЯНИЯ СЕССИИ ПОЛЬЗОВАТЕЛЯ ---
         auth.onAuthStateChanged(function(user) {
             var authScreen = document.getElementById('auth-screen');
             var chatScreen = document.getElementById('chat-screen');
             
             if (user) {
-                // Если пользователь залогинен, достаем его Ник из базы
-                database.ref('users/' + user.uid).once('value', function(snapshot) {
-                    var userData = snapshot.val();
-                    var currentName = (userData && userData.username) ? userData.username : "Пользователь";
+                // Если залогинен, вытаскиваем документ из Firestore по UID
+                db.collection("users").doc(user.uid).get()
+                .then(function(doc) {
+                    var currentName = "Пользователь";
+                    if (doc.exists) {
+                        var userData = doc.data();
+                        currentName = userData.username || "Пользователь";
+                    }
                     
-                    document.getElementById('welcome-msg').innerText = "Ваш ник: " + currentName;
+                    document.getElementById('welcome-msg').innerText = "Ваш никнейм: " + currentName;
                     document.getElementById('chat-title').innerText = currentName;
                     
                     authScreen.style.display = 'none';
                     chatScreen.style.display = 'flex';
+                })
+                .catch(function(err) {
+                    console.log("Ошибка чтения профиля: ", err);
                 });
             } else {
-                // Если не залогинен, возвращаем форму входа
+                // Если разлогинен, возвращаем форму ввода
                 authScreen.style.display = 'flex';
                 chatScreen.style.display = 'none';
             }
         });
 
-        // --- КНОПКА: ВЫХОД ИЗ ПРОФИЛЯ ---
+        // --- КНОПКА: ВЫХОД ---
         document.getElementById('btn-logout').addEventListener('click', function() {
             auth.signOut();
         });
     </script>
 </body>
 </html>
+
 
