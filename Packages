@@ -1,12 +1,12 @@
 Package: com.okkidididjdj.ios6chat
 Name: iMessage iOS 6
-Version: 1.7.0
+Version: 3.0.0
 Architecture: iphoneos-arm
-Description: Скевоморфный мессенджер. Фикс вылетов через WebSheet бинарник.
+Description: Скевоморфный мессенджер. Чистая Web-App интеграция.
 Maintainer: okkidididjdj
 Author: okkidididjdj
 Section: Applications
-Size: 3821314
+Size: 3057994
 Filename: debs/ios6chat.brand.deb
-MD5sum: 9eb7d610cffbd04fc0d430471651a84c
+MD5sum: 9246bdff10e493591dc102ba89b0d7cb
 
