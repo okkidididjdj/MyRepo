@@ -1,1 +1,11 @@
-
+Package: com.retro.testtweak
+Name: Test Repo Tweak
+Version: 1.0.0
+Architecture: iphoneos-arm
+Description: Тестовый твик для проверки твоего нового репозитория.
+Maintainer: okkidididjdj
+Author: okkidididjdj
+Section: Tweaks
+Size: 1024
+Filename: debs/test.deb
+MD5sum: d41d8cd98f00b204e9800998ecf8427e
