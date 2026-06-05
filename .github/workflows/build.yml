@@ -1,0 +1,56 @@
+name: Automated Cydia Repo Builder
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Prepare Package Structure
+      run: |
+        mkdir -p build-folder/DEBIAN
+        mkdir -p build-folder/Applications/iOS6Chat.app
+        
+        cp DEBIAN/control build-folder/DEBIAN/
+        cp Applications/iOS6Chat.app/Info.plist build-folder/Applications/iOS6Chat.app/
+        cp Applications/iOS6Chat.app/iOS6Chat build-folder/Applications/iOS6Chat.app/
+        cp Applications/iOS6Chat.app/index.html build-folder/Applications/iOS6Chat.app/
+        
+        chmod +x build-folder/Applications/iOS6Chat.app/iOS6Chat
+
+    - name: Build .deb Package
+      run: |
+        mkdir -p debs
+        dpkg-deb --build build-folder debs/ios6chat.brand.deb
+
+    - name: Update Cydia Indexes
+      run: |
+        echo "Package: com.okkidididjdj.ios6chat" > Packages
+        echo "Name: iMessage iOS 6" >> Packages
+        echo "Version: 1.0.0" >> Packages
+        echo "Architecture: iphoneos-arm" >> Packages
+        echo "Description: Крутой скевоморфный мессенджер с базой Firebase!" >> Packages
+        echo "Maintainer: okkidididjdj" >> Packages
+        echo "Author: okkidididjdj" >> Packages
+        echo "Section: Applications" >> Packages
+        echo "Size: $(stat -c%s debs/ios6chat.brand.deb)" >> Packages
+        echo "Filename: debs/ios6chat.brand.deb" >> Packages
+        echo "MD5sum: $(md5sum debs/ios6chat.brand.deb | awk '{print $1}')" >> Packages
+        echo "" >> Packages
+        
+        bzip2 -c Packages > Packages.bz2
+
+    - name: Commit and Push changes
+      run: |
+        git config --global user.name "GitHub Actions"
+        git config --global user.email "actions@github.com"
+        git add debs/ios6chat.brand.deb Packages Packages.bz2
+        git commit -m "Авто-сборка пакета и обновление индексов" || exit 0
+        git push
