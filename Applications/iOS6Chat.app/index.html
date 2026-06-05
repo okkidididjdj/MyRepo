@@ -21,10 +21,11 @@
 
         body, html {
             height: 100%;
-            background: #cbd2d9 url('https://i.imgur.com/v8tZ89G.png'); /* Текстура льна */
+            background: #cbd2d9 url('https://i.postimg.cc/8zM6g776/linen-bg.png'); /* Починенный фон */
             display: flex;
             justify-content: center;
             align-items: center;
+            overflow: hidden;
         }
 
         .phone-screen {
@@ -38,6 +39,31 @@
             position: relative;
             box-shadow: 0 0 20px rgba(0,0,0,0.4);
             overflow: hidden;
+        }
+
+        /* Анимированные контейнеры экранов */
+        .screen-container {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            width: 100%;
+            transition: transform 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.35s ease;
+            transform: translate3d(100%, 0, 0);
+            opacity: 0;
+            z-index: 1;
+        }
+
+        .screen-container.active {
+            transform: translate3d(0, 0, 0);
+            opacity: 1;
+            z-index: 2;
+        }
+
+        .screen-container.back {
+            transform: translate3d(-100%, 0, 0);
+            opacity: 0;
         }
 
         /* Глянцевый бар iOS 6 */
@@ -57,13 +83,25 @@
             flex-shrink: 0;
         }
 
+        .logout-nav-btn {
+            position: absolute;
+            right: 8px;
+            top: 7px;
+            height: 30px;
+            padding: 0 10px;
+            font-size: 12px;
+            margin: 0;
+            width: auto;
+        }
+
         .content {
             flex: 1;
             padding: 20px;
             overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
         }
 
-        /* Закругленные группы ячеек (Grouped Table View) */
+        /* Группы ячеек */
         .login-group {
             background: white;
             border: 1px solid #ababab;
@@ -97,6 +135,7 @@
             outline: none;
             font-size: 16px;
             color: #000;
+            background: transparent;
         }
 
         /* Кнопки */
@@ -134,6 +173,113 @@
             background: linear-gradient(to bottom, #b8b8b8 0%, #a8a8a8 50%, #f9f9f9 100%);
         }
 
+        /* Кнопка отправки сообщений */
+        .btn-send {
+            background: linear-gradient(to bottom, #7fcbfb 0%, #309bfa 50%, #1282f4 51%, #1e8df7 100%);
+            border: 1px solid #1260b3;
+            border-radius: 6px;
+            color: white;
+            font-weight: bold;
+            font-size: 14px;
+            padding: 0 14px;
+            height: 30px;
+            text-shadow: 0 -1px 0 rgba(0,0,0,0.4);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.3);
+        }
+
+        /* ЛЕНТА ДИАЛОГА В СТИЛЕ iMESSAGE */
+        .chat-history {
+            flex: 1;
+            padding: 12px;
+            overflow-y: auto;
+            background: #dbecf7; /* Светло-голубой фон сообщений */
+            display: flex;
+            flex-direction: column;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .msg-container {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 10px;
+            max-width: 80%;
+        }
+
+        .msg-container.incoming {
+            align-self: flex-start;
+        }
+
+        .msg-container.outgoing {
+            align-self: flex-end;
+        }
+
+        .msg-sender {
+            font-size: 11px;
+            color: #666;
+            margin: 0 0 3px 6px;
+        }
+        .msg-container.outgoing .msg-sender {
+            text-align: right;
+            margin: 0 6px 3px 0;
+        }
+
+        .bubble {
+            padding: 8px 14px;
+            border-radius: 15px;
+            font-size: 15px;
+            line-height: 19px;
+            word-wrap: break-word;
+            box-shadow: 0 1px 1px rgba(0,0,0,0.15);
+            position: relative;
+        }
+
+        /* Пузыри входящих (Серые) */
+        .incoming .bubble {
+            background: linear-gradient(to bottom, #fdfdfd 0%, #ebebeb 50%, #dedede 51%, #e5e5e5 100%);
+            border: 1px solid #b3b3b3;
+            color: black;
+        }
+
+        /* Пузыри исходящих (Зеленые / Синие iMessage) */
+        .outgoing .bubble {
+            background: linear-gradient(to bottom, #86f675 0%, #46db2a 50%, #29c10b 51%, #3ee220 100%);
+            border: 1px solid #33a815;
+            color: white;
+            text-shadow: 0 -1px 0 rgba(0,0,0,0.2);
+        }
+
+        /* Панель ввода сообщений нижней части */
+        .input-bar {
+            height: 45px;
+            background: linear-gradient(to bottom, #e2e5ea 0%, #b2b7c2 100%);
+            border-top: 1px solid #9297a1;
+            display: flex;
+            align-items: center;
+            padding: 0 8px;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        .chat-input-wrapper {
+            flex: 1;
+            background: white;
+            border: 1px solid #989da6;
+            border-radius: 14px;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.2), 0 1px 0 rgba(255,255,255,0.6);
+            display: flex;
+            align-items: center;
+            padding: 0 10px;
+            height: 28px;
+        }
+
+        .chat-input-wrapper input {
+            width: 100%;
+            border: none;
+            outline: none;
+            font-size: 14px;
+            background: transparent;
+        }
+
         /* Системный iOS 6 Алерт */
         .ios-alert-overlay {
             position: absolute;
@@ -143,11 +289,13 @@
             justify-content: center;
             align-items: center;
             z-index: 9999;
+            opacity: 0;
+            transition: opacity 0.2s ease-out;
         }
 
         .ios-alert {
             width: 270px;
-            background: linear-gradient(to bottom, rgba(30,42,66,0.92) 0%, rgba(15,24,44,0.92) 100%);
+            background: linear-gradient(to bottom, rgba(30,42,66,0.95) 0%, rgba(15,24,44,0.95) 100%);
             border: 2px solid #a1b4cd;
             border-radius: 15px;
             box-shadow: 0 10px 25px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.3);
@@ -155,6 +303,17 @@
             text-align: center;
             padding-top: 20px;
             overflow: hidden;
+            transform: scale(1.15);
+            transition: transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        .ios-alert-overlay.visible {
+            display: flex;
+            opacity: 1;
+        }
+
+        .ios-alert-overlay.visible .ios-alert {
+            transform: scale(1);
         }
 
         .ios-alert-title {
@@ -173,8 +332,8 @@
 
         .ios-alert-btn {
             height: 44px;
-            border-top: 1px solid rgba(255,255,255,0.2);
-            background: linear-gradient(to bottom, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0) 100%);
+            border-top: 1px solid rgba(255,255,255,0.15);
+            background: linear-gradient(to bottom, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 100%);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -184,12 +343,58 @@
             cursor: pointer;
         }
 
-        .ios-alert-btn:active {
-            background: rgba(255,255,255,0.2);
+        /* КРУТИЛКА ЗАГРУЗКИ: НАСТОЯЩИЙ 12-SPIKE SPINNER */
+        .loading-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.35);
+            z-index: 9998;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+        .loading-overlay.visible {
+            display: flex;
+            opacity: 1;
         }
 
-        #chat-screen {
-            display: none;
+        .spinner-ios {
+            position: relative;
+            width: 36px;
+            height: 36px;
+        }
+
+        .spinner-ios div {
+            position: absolute;
+            left: 16px;
+            top: 0;
+            width: 4px;
+            height: 10px;
+            background: #fff;
+            border-radius: 2px;
+            transform-origin: 2px 18px;
+            animation: ios-spinner-fade 1s linear infinite;
+        }
+
+        /* 12 лучей с шагом в 30 градусов и задержкой анимации */
+        .spinner-ios div:nth-child(1)  { transform: rotate(0deg); animation-delay: 0s; }
+        .spinner-ios div:nth-child(2)  { transform: rotate(30deg); animation-delay: -0.916s; }
+        .spinner-ios div:nth-child(3)  { transform: rotate(60deg); animation-delay: -0.833s; }
+        .spinner-ios div:nth-child(4)  { transform: rotate(90deg); animation-delay: -0.75s; }
+        .spinner-ios div:nth-child(5)  { transform: rotate(120deg); animation-delay: -0.666s; }
+        .spinner-ios div:nth-child(6)  { transform: rotate(150deg); animation-delay: -0.583s; }
+        .spinner-ios div:nth-child(7)  { transform: rotate(180deg); animation-delay: -0.5s; }
+        .spinner-ios div:nth-child(8)  { transform: rotate(210deg); animation-delay: -0.416s; }
+        .spinner-ios div:nth-child(9)  { transform: rotate(240deg); animation-delay: -0.333s; }
+        .spinner-ios div:nth-child(10) { transform: rotate(270deg); animation-delay: -0.25s; }
+        .spinner-ios div:nth-child(11) { transform: rotate(300deg); animation-delay: -0.166s; }
+        .spinner-ios div:nth-child(12) { transform: rotate(330deg); animation-delay: -0.083s; }
+
+        @keyframes ios-spinner-fade {
+            0% { opacity: 1; }
+            100% { opacity: 0.2; }
         }
     </style>
 </head>
@@ -197,11 +402,12 @@
 
     <div class="phone-screen">
         
-        <div id="auth-screen" style="display: flex; flex-direction: column; height: 100%;">
+        <!-- ЭКРАН АВТОРИЗАЦИИ -->
+        <div id="auth-screen" class="screen-container active">
             <div class="nav-bar">iMessage</div>
             <div class="content">
                 <div style="text-align: center; margin: 20px 0 30px 0;">
-                    <img src="https://i.imgur.com/K6YwI8F.png" alt="iMessage" style="width: 75px; height: 75px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
+                    <img src="https://i.postimg.cc/g2g6dfg0/imessage-ios6.png" alt="iMessage" style="width: 75px; height: 75px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
                 </div>
 
                 <div class="login-group">
@@ -224,15 +430,36 @@
             </div>
         </div>
 
-        <div id="chat-screen" style="flex-direction: column; height: 100%;">
-            <div class="nav-bar" id="chat-title">Чат</div>
-            <div class="content">
-                <h3 style="text-align: center; color: #555; margin-top: 50px;">Вы вошли!</h3>
-                <p id="welcome-msg" style="text-align: center; color: #333; margin-top: 10px; font-weight: bold;"></p>
-                <button class="btn btn-silver" id="btn-logout" style="margin-top: 30px;">Выйти</button>
+        <!-- ЭКРАН ПОЛНОЦЕННОГО ЧАТА -->
+        <div id="chat-screen" class="screen-container">
+            <div class="nav-bar" id="chat-title">Общий чат
+                <button class="btn btn-silver logout-nav-btn" id="btn-logout">Выйти</button>
+            </div>
+            
+            <!-- Лента iMessage -->
+            <div class="chat-history" id="chat-history">
+                <!-- Сюда скрипт рендерит сообщения -->
+            </div>
+
+            <!-- Глянцевая нижняя панель ввода -->
+            <div class="input-bar">
+                <div class="chat-input-wrapper">
+                    <input type="text" id="message-input" placeholder="Сообщение" autocomplete="off">
+                </div>
+                <button class="btn-send" id="btn-send">Отправить</button>
             </div>
         </div>
 
+        <!-- КРУТИЛКА ЗАГРУЗКИ (12-SPIKE) -->
+        <div class="loading-overlay" id="loading-spinner">
+            <div class="spinner-ios">
+                <div></div><div></div><div></div><div></div>
+                <div></div><div></div><div></div><div></div>
+                <div></div><div></div><div></div><div></div>
+            </div>
+        </div>
+
+        <!-- КАСТОМНЫЙ АЛЕРТ -->
         <div class="ios-alert-overlay" id="custom-alert">
             <div class="ios-alert">
                 <div class="ios-alert-title" id="alert-title">Ошибка</div>
@@ -244,7 +471,7 @@
     </div>
 
     <script>
-        // Твоя конфигурация Firebase
+        // Конфигурация Firebase
         var firebaseConfig = {
             apiKey: "AIzaSyBcD_k_Y9xfmdeXiXWmgf-Q7Xb4_XwDg-M",
             authDomain: "fa-game1.firebaseapp.com",
@@ -255,23 +482,65 @@
             appId: "1:667950401953:web:659f0dfa90b20d649523e0"
         };
 
-        // Инициализируем компоненты через Compat слои
         firebase.initializeApp(firebaseConfig);
         var auth = firebase.auth();
         var db = firebase.firestore();
 
-        // Кастомные алерты iOS 6
+        var currentUserProfile = null;
+        var unsubscribeChat = null;
+
+        // Показ окон с плавной анимацией сдвига
+        function switchScreen(fromId, toId, isBack) {
+            var fromScreen = document.getElementById(fromId);
+            var toScreen = document.getElementById(toId);
+            
+            if(isBack) {
+                fromScreen.style.transform = 'translate3d(100%, 0, 0)';
+                toScreen.className = "screen-container active";
+            } else {
+                fromScreen.className = "screen-container back";
+                toScreen.className = "screen-container active";
+            }
+        }
+
+        // Анимации Спиннера и Алертов
+        function showSpinner() {
+            var s = document.getElementById('loading-spinner');
+            s.style.display = 'flex';
+            setTimeout(function(){ s.classList.add('visible'); }, 10);
+        }
+
+        function hideSpinner() {
+            var s = document.getElementById('loading-spinner');
+            s.classList.remove('visible');
+            setTimeout(function(){ s.style.display = 'none'; }, 200);
+        }
+
         function showAlert(title, message) {
+            var a = document.getElementById('custom-alert');
+            a.style.display = 'flex';
+            setTimeout(function(){ a.classList.add('visible'); }, 10);
             document.getElementById('alert-title').innerText = title;
             document.getElementById('alert-message').innerText = message;
-            document.getElementById('custom-alert').style.display = 'flex';
         }
 
         function closeAlert() {
-            document.getElementById('custom-alert').style.display = 'none';
+            var a = document.getElementById('custom-alert');
+            a.classList.remove('visible');
+            setTimeout(function(){ a.style.display = 'none'; }, 200);
         }
 
-        // --- ЛОГИКА: РЕГИСТРАЦИЯ В CLOUD FIRESTORE ---
+        // Функция обработки ошибок Auth (включая проверку выключенного провайдера)
+        function handleAuthError(error) {
+            hideSpinner();
+            if (error.code === 'auth/operation-not-allowed') {
+                showAlert("Ошибка", "Ошибка сервера. Попробуйте снова!");
+            } else {
+                showAlert("Ошибка операции", error.message);
+            }
+        }
+
+        // --- РЕГИСТРАЦИЯ ---
         document.getElementById('btn-register').addEventListener('click', function() {
             var username = document.getElementById('username').value.trim();
             var email = document.getElementById('email').value.trim();
@@ -282,38 +551,37 @@
                 return;
             }
 
-            // Проверяем в Firestore коллекции 'users', занят ли этот никнейм
+            showSpinner();
+
             db.collection("users").where("username", "==", username).get()
             .then(function(querySnapshot) {
                 if (!querySnapshot.empty) {
+                    hideSpinner();
                     showAlert("Имя занято", "Пользователь с таким никнеймом уже существует.");
                 } else {
-                    // Если ник свободен, регистрируем почту и пароль в Auth
                     auth.createUserWithEmailAndPassword(email, password)
                     .then(function(userCredential) {
                         var user = userCredential.user;
-                        
-                        // Сохраняем документ пользователя в Firestore: коллекция 'users', ID документа = UID юзера
                         db.collection("users").doc(user.uid).set({
                             username: username,
                             email: email,
                             createdAt: firebase.firestore.FieldValue.serverTimestamp()
                         })
                         .then(function() {
+                            hideSpinner();
                             showAlert("Успех!", "Вы успешно создали аккаунт!");
                         });
                     })
-                    .catch(function(error) {
-                        showAlert("Ошибка Auth", error.message);
-                    });
+                    .catch(handleAuthError);
                 }
             })
             .catch(function(error) {
-                showAlert("Ошибка базы", "Не удалось проверить ник: " + error.message);
+                hideSpinner();
+                showAlert("Ошибка базы", "Не удалось проверить ник.");
             });
         });
 
-        // --- ЛОГИКА: ВХОД В АККАУНТ ---
+        // --- ВХОД В АККАУНТ ---
         document.getElementById('btn-login').addEventListener('click', function() {
             var email = document.getElementById('email').value.trim();
             var password = document.getElementById('password').value;
@@ -323,52 +591,122 @@
                 return;
             }
 
+            showSpinner();
+
             auth.signInWithEmailAndPassword(email, password)
-            .then(function(userCredential) {
-                showAlert("iMessage", "Вход выполнен успешно!");
+            .then(function() {
+                hideSpinner();
             })
-            .catch(function(error) {
-                showAlert("Ошибка входа", "Неверный логин или пароль.");
-            });
+            .catch(handleAuthError);
         });
 
-        // --- СЛУШАТЕЛЬ СОСТОЯНИЯ СЕССИИ ПОЛЬЗОВАТЕЛЯ ---
+        // --- СЛУШАТЕЛЬ СОСТОЯНИЯ СЕССИИ ---
         auth.onAuthStateChanged(function(user) {
-            var authScreen = document.getElementById('auth-screen');
-            var chatScreen = document.getElementById('chat-screen');
-            
             if (user) {
-                // Если залогинен, вытаскиваем документ из Firestore по UID
+                showSpinner();
                 db.collection("users").doc(user.uid).get()
                 .then(function(doc) {
-                    var currentName = "Пользователь";
+                    hideSpinner();
                     if (doc.exists) {
-                        var userData = doc.data();
-                        currentName = userData.username || "Пользователь";
+                        currentUserProfile = doc.data();
+                    } else {
+                        currentUserProfile = { username: "Гость" };
                     }
                     
-                    document.getElementById('welcome-msg').innerText = "Ваш никнейм: " + currentName;
-                    document.getElementById('chat-title').innerText = currentName;
+                    document.getElementById('chat-title').innerHTML = 'iMessage (' + currentUserProfile.username + ') <button class="btn btn-silver logout-nav-btn" id="btn-logout-dynamic">Выйти</button>';
                     
-                    authScreen.style.display = 'none';
-                    chatScreen.style.display = 'flex';
+                    // Динамическая вешалка на кнопку выхода внутри навибара
+                    document.getElementById('btn-logout-dynamic').addEventListener('click', function(){ auth.signOut(); });
+
+                    switchScreen('auth-screen', 'chat-screen', false);
+                    loadChatMessages();
                 })
-                .catch(function(err) {
-                    console.log("Ошибка чтения профиля: ", err);
+                .catch(function() {
+                    hideSpinner();
+                    switchScreen('auth-screen', 'chat-screen', false);
+                    loadChatMessages();
                 });
             } else {
-                // Если разлогинен, возвращаем форму ввода
-                authScreen.style.display = 'flex';
-                chatScreen.style.display = 'none';
+                if(unsubscribeChat) unsubscribeChat();
+                currentUserProfile = null;
+                switchScreen('chat-screen', 'auth-screen', true);
             }
         });
 
-        // --- КНОПКА: ВЫХОД ---
-        document.getElementById('btn-logout').addEventListener('click', function() {
-            auth.signOut();
+        // Старый логаут тоже оставим
+        document.getElementById('btn-logout').addEventListener('click', function() { auth.signOut(); });
+
+        // --- РАБОТА С ЧАТОМ (FIRESTORE) ---
+        function loadChatMessages() {
+            var historyContainer = document.getElementById('chat-history');
+            
+            // Подгружаем последние 50 сообщений в реальном времени
+            unsubscribeChat = db.collection("messages")
+                .orderBy("createdAt", "asc")
+                .limitToLast(50)
+                .onSnapshot(function(snapshot) {
+                    historyContainer.innerHTML = "";
+                    
+                    snapshot.forEach(function(doc) {
+                        var msgData = doc.data();
+                        var isMyMessage = false;
+                        
+                        if(auth.currentUser && msgData.userId === auth.currentUser.uid) {
+                            isMyMessage = true;
+                        }
+
+                        var msgNode = document.createElement('div');
+                        msgNode.className = "msg-container " + (isMyMessage ? "outgoing" : "incoming");
+
+                        var senderNode = document.createElement('div');
+                        senderNode.className = "msg-sender";
+                        senderNode.innerText = msgData.username || "Аноним";
+
+                        var bubbleNode = document.createElement('div');
+                        bubbleNode.className = "bubble";
+                        bubbleNode.innerText = msgData.text || "";
+
+                        msgNode.appendChild(senderNode);
+                        msgNode.appendChild(bubbleNode);
+                        historyContainer.appendChild(msgNode);
+                    });
+
+                    // Плавный скролл вниз при получении новых сообщений
+                    historyContainer.scrollTop = historyContainer.scrollHeight;
+                }, function(error) {
+                    console.error("Ошибка загрузки сообщений: ", error);
+                });
+        }
+
+        // --- ОТПРАВКА СООБЩЕНИЯ ---
+        function sendMessage() {
+            var inputEl = document.getElementById('message-input');
+            var text = inputEl.value.trim();
+            if(!text || !auth.currentUser) return;
+
+            var name = currentUserProfile ? currentUserProfile.username : "Пользователь";
+
+            db.collection("messages").add({
+                text: text,
+                userId: auth.currentUser.uid,
+                username: name,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            })
+            .then(function() {
+                inputEl.value = "";
+            })
+            .catch(function(err) {
+                showAlert("Ошибка чата", "Не удалось отправить: " + err.message);
+            });
+        }
+
+        document.getElementById('btn-send').addEventListener('click', sendMessage);
+        document.getElementById('message-input').addEventListener('keypress', function(e) {
+            if(e.key === 'Enter') sendMessage();
         });
     </script>
 </body>
 </html>
+
 
 
