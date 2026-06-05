@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>iMessage iOS 6</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+    <style>
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        
+        body, html {
+            margin: 0; padding: 0;
+            width: 100%; height: 100%;
+            font-family: Helvetica, Arial, sans-serif;
+            background: #bcbfb4 url('https://reallinen.com/wp-content/uploads/2022/02/linen-texture-grey.jpg');
+            background-size: 100px;
+            display: flex; flex-direction: column;
+            overflow: hidden;
+        }
+
+        #authOverlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 100; padding: 20px;
+        }
+
+        .auth-card {
+            width: 100%; max-width: 300px;
+            background: linear-gradient(to bottom, #f0f0f0 0%, #c8c8c8 100%);
+            border: 1px solid #707070; border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.7);
+            padding: 20px; text-align: center;
+        }
+
+        .auth-card h2 {
+            color: #333; font-size: 18px; margin-top: 0; margin-bottom: 15px;
+            text-shadow: 0 1px 0 #fff;
+        }
+
+        .auth-input {
+            width: 100%; height: 34px; margin-bottom: 12px;
+            border-radius: 6px; border: 1px solid #999;
+            padding: 0 10px; font-size: 15px;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.15);
+            outline: none; background: #fff;
+        }
+
+        .auth-buttons { display: flex; gap: 10px; margin-top: 5px; }
+
+        .btn {
+            flex: 1; height: 34px; border-radius: 6px; font-size: 14px;
+            font-weight: bold; cursor: pointer;
+        }
+        .btn-submit {
+            background: linear-gradient(to bottom, #5ba4eb 0%, #2173cf 50%, #175fbc 51%, #247cd9 100%);
+            border: 1px solid #134b94; color: white;
+            text-shadow: 0 -1px 0 rgba(0,0,0,0.5);
+            box-shadow: 0 1px 0 rgba(255,255,255,0.3) inset;
+        }
+        .btn-reg {
+            background: linear-gradient(to bottom, #ffffff 0%, #e0e0e0 50%, #d0d0d0 51%, #ededed 100%);
+            border: 1px solid #a0a0a0; color: #333;
+            text-shadow: 0 1px 0 #fff;
+            box-shadow: 0 1px 0 rgba(255,255,255,0.5) inset;
+        }
+
+        .nav-bar {
+            height: 44px;
+            background: linear-gradient(to bottom, #74849a 0%, #4c5c74 50%, #3b4c64 51%, #44546d 100%);
+            border-bottom: 1px solid #2d3745;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+            display: flex; align-items: center; justify-content: center;
+            position: relative; z-index: 10;
+        }
+        .nav-bar h1 {
+            color: #fff; font-size: 18px; font-weight: bold;
+            text-shadow: 0 -1px 0 rgba(0,0,0,0.6); margin: 0;
+        }
+
+        .chat-container {
+            flex: 1; overflow-y: scroll; padding: 15px;
+            display: flex; flex-direction: column; -webkit-overflow-scrolling: touch;
+        }
+
+        .message {
+            max-width: 75%; padding: 8px 14px; border-radius: 15px;
+            margin-bottom: 10px; font-size: 15px; line-height: 1.4;
+            position: relative; text-shadow: 0 1px 0 rgba(255,255,255,0.2);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+        }
+        .message.received {
+            background: linear-gradient(to bottom, #fcfcfc 0%, #e6e6e6 100%);
+            border: 1px solid #b8b8b8; color: #000; align-self: flex-start;
+        }
+        .message.sent {
+            background: linear-gradient(to bottom, #a3f167 0%, #76db2a 50%, #5cd00a 51%, #6fe019 100%);
+            border: 1px solid #53b302; color: #fff; align-self: flex-end;
+            text-shadow: 0 -1px 0 rgba(0,0,0,0.3);
+        }
+        .author { font-size: 10px; font-weight: bold; color: rgba(0,0,0,0.5); margin-bottom: 3px; display: block; }
+        .message.sent .author { color: rgba(255,255,255,0.7); text-shadow: none; }
+
+        .input-bar {
+            height: 44px; background: linear-gradient(to bottom, #e0e0e0 0%, #a8a8a8 100%);
+            border-top: 1px solid #8e8e8e; display: flex; align-items: center; padding: 0 8px; gap: 8px;
+        }
+        .input-bar input {
+            flex: 1; height: 30px; border-radius: 15px; border: 1px solid #9c9c9c;
+            padding: 0 12px; font-size: 15px; box-shadow: inset 0 1px 3px rgba(0,0,0,0.2); outline: none; background: #fff;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="authOverlay">
+        <div class="auth-card">
+            <h2>Вход в iMessage</h2>
+            <input type="text" id="usernameInput" class="auth-input" placeholder="Имя (Nickname)">
+            <input type="password" id="pinInput" class="auth-input" placeholder="Пин-код (Цифры)">
+            <div class="auth-buttons">
+                <button class="btn btn-reg" onclick="registerUser()">Рег.</button>
+                <button class="btn btn-submit" onclick="loginUser()">Войти</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="nav-bar">
+        <h1 id="chat-title">iMessage (iOS 6)</h1>
+    </div>
+
+    <div class="chat-container" id="chatContainer"></div>
+
+    <div class="input-bar">
+        <input type="text" id="msgInput" placeholder="Ваше сообщение..." onkeypress="handleKeyPress(event)">
+        <button class="btn btn-submit" style="height:30px; flex:none; padding:0 15px;" onclick="sendMessage()">Отправ.</button>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "ТВОЙ_API_KEY",
+            authDomain: "твой-проект.firebaseapp.com",
+            databaseURL: "https://твой-проект-default-rtdb.firebaseio.com",
+            projectId: "твой-проект",
+            storageBucket: "твой-проект.appspot.com",
+            messagingSenderId: "1234567890",
+            appId: "1:1234:web:abcd"
+        };
+        
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+        let currentUsername = "";
+
+        function registerUser() {
+            const user = document.getElementById('usernameInput').value.trim();
+            const pin = document.getElementById('pinInput').value.trim();
+            if(!user || !pin) return alert("Заполните все поля!");
+
+            database.ref('users/' + user).once('value', (snapshot) => {
+                if(snapshot.exists()) {
+                    alert("Это имя уже занято!");
+                } else {
+                    database.ref('users/' + user).set({ pin: pin }, (error) => {
+                        if(!error) alert("Успешная регистрация! Теперь нажмите Войти.");
+                    });
+                }
+            });
+        }
+
+        function loginUser() {
+            const user = document.getElementById('usernameInput').value.trim();
+            const pin = document.getElementById('pinInput').value.trim();
+            if(!user || !pin) return alert("Заполните все поля!");
+
+            database.ref('users/' + user).once('value', (snapshot) => {
+                const userData = snapshot.val();
+                if(userData && userData.pin === pin) {
+                    currentUsername = user;
+                    document.getElementById('chat-title').innerText = "iMessage: " + currentUsername;
+                    document.getElementById('authOverlay').style.display = 'none';
+                    startChatListening();
+                } else {
+                    alert("Неверное имя или пин-код!");
+                }
+            });
+        }
+
+        function startChatListening() {
+            database.ref('messages').limitToLast(50).on('child_added', (snapshot) => {
+                const data = snapshot.val();
+                displayMessage(data.sender, data.text);
+            });
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('msgInput');
+            const text = input.value.trim();
+            if (text !== "" && currentUsername !== "") {
+                database.ref('messages').push({
+                    sender: currentUsername,
+                    text: text,
+                    timestamp: Date.now()
+                });
+                input.value = "";
+            }
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') sendMessage();
+        }
+
+        function displayMessage(sender, text) {
+            const container = document.getElementById('chatContainer');
+            const msgDiv = document.createElement('div');
+            const isMe = (sender === currentUsername);
+            
+            msgDiv.className = `message ${isMe ? 'sent' : 'received'}`;
+            
+            const authorSpan = document.createElement('span');
+            authorSpan.className = 'author';
+            authorSpan.innerText = sender;
+            
+            msgDiv.appendChild(authorSpan);
+            msgDiv.appendChild(document.createTextNode(text));
+            container.appendChild(msgDiv);
+            container.scrollTop = container.scrollHeight;
+        }
+    </script>
+</body>
+</html>
