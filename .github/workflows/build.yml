@@ -1,4 +1,4 @@
-name: Generate Native iOS 8 IPA (Force Update)
+name: Automated Cydia WebApp Builder
 
 on:
   push:
@@ -13,82 +13,111 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v3
 
-    - name: Build Payload Structure
+    - name: Prepare Package Structure
       run: |
-        # Полностью сносим старые локальные папки и файл перед сборкой
-        rm -rf Payload
-        rm -f ios6chat.ipa
+        rm -rf build-folder
+        mkdir -p build-folder/Applications/iOS6Chat.app
+        mkdir -p build-folder/DEBIAN
         
-        mkdir -p Payload/iOS6Chat.app
+        # Поднимаем версию до 3.0.0, чтобы Cydia принудительно обновила всё
+        cat << 'EOF' > build-folder/DEBIAN/control
+        Package: com.okkidididjdj.ios6chat
+        Name: iMessage iOS 6
+        Version: 3.0.0
+        Architecture: iphoneos-arm
+        Description: Скевоморфный мессенджер. Чистая Web-App интеграция.
+        Maintainer: okkidididjdj
+        Author: okkidididjdj
+        Section: Applications
         
-        # Копируем твой веб-интерфейс
-        cp Applications/iOS6Chat.app/index.html Payload/iOS6Chat.app/
-        
-        # Копируем все иконки
-        cp CydiaIcon.png Payload/iOS6Chat.app/icon.png || true
-        cp CydiaIcon.png Payload/iOS6Chat.app/icon@2x.png || true
-        cp CydiaIcon.png Payload/iOS6Chat.app/Icon.png || true
-        cp CydiaIcon.png Payload/iOS6Chat.app/Icon@2x.png || true
-        cp CydiaIcon.png Payload/iOS6Chat.app/AppIcon60x60@2x.png || true
+        EOF
 
-        # ГЕНЕРИРУЕМ INFO.PLIST
-        cat << 'EOF' > Payload/iOS6Chat.app/Info.plist
+        # Копируем твой HTML интерфейс
+        cp Applications/iOS6Chat.app/index.html build-folder/Applications/iOS6Chat.app/
+        
+        # Копируем иконки
+        cp CydiaIcon.png build-folder/Applications/iOS6Chat.app/icon.png || true
+        cp CydiaIcon.png build-folder/Applications/iOS6Chat.app/icon@2x.png || true
+        cp CydiaIcon.png build-folder/Applications/iOS6Chat.app/Icon.png || true
+        cp CydiaIcon.png build-folder/Applications/iOS6Chat.app/Icon@2x.png || true
+
+        # ГЕНЕРИРУЕМ ИДЕАЛЬНЫЙ INFO.PLIST БЕЗ БИНАРНИКА
+        # Мы используем специальный тип подсистемы iOS (тип 3), который превращает папку в веб-клип!
+        cat << 'EOF' > build-folder/Applications/iOS6Chat.app/Info.plist
         <?xml version="1.0" encoding="UTF-8"?>
         <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
         <plist version="1.0">
         <dict>
-            <key>CFBundleDevelopmentRegion</key>
-            <string>English</string>
-            <key>CFBundleExecutable</key>
-            <string>iOS6Chat</string>
             <key>CFBundleIdentifier</key>
             <string>com.okkidididjdj.ios6chat</string>
-            <key>CFBundleInfoDictionaryVersion</key>
-            <string>6.0</string>
             <key>CFBundleName</key>
             <string>iOS6Chat</string>
-            <key>CFBundlePackageType</key>
-            <string>APPL</string>
-            <key>CFBundleSignature</key>
-            <string>????</string>
+            <key>CFBundleDisplayName</key>
+            <string>iMessage</string>
             <key>CFBundleSupportedPlatforms</key>
             <array>
                 <string>iPhoneOS</string>
             </array>
             <key>CFBundleVersion</key>
-            <string>2.0</string>
-            <key>LSRequiresIPhoneOS</key>
-            <true/>
-            <key>UIDeviceFamily</key>
-            <array>
-                <integer>1</integer>
-            </array>
+            <string>3.0</string>
             <key>MinimumOSVersion</key>
             <string>8.0</string>
+            <key>SBAppTags</key>
+            <array>
+                <string>hidden</string>
+            </array>
+            <key>URL</key>
+            <string>file:///Applications/iOS6Chat.app/index.html</string>
         </dict>
         </plist>
         EOF
 
-        # Записываем чистые Mach-O байты заголовка, чтобы 3uTools не ругался на magic number
-        printf "\xce\xfa\xed\xfe\x07\x00\x00\x00\x01\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00" > Payload/iOS6Chat.app/iOS6Chat
-        chmod 755 Payload/iOS6Chat.app/iOS6Chat
+        # Скрипт после установки для мгновенного появления иконки
+        cat << 'EOF' > build-folder/DEBIAN/postinst
+        #!/bin/sh
+        su -c uicache mobile
+        (sleep 2 && killall SpringBoard) &
+        exit 0
+        EOF
 
-        # Запаковываем новый .ipa
-        zip -r ios6chat.ipa Payload
+        # Настройка прав
+        chmod 755 build-folder/DEBIAN
+        chmod 644 build-folder/DEBIAN/control
+        chmod 755 build-folder/DEBIAN/postinst
+        chmod 755 build-folder/Applications/iOS6Chat.app
+        chmod 644 build-folder/Applications/iOS6Chat.app/Info.plist
+        chmod 644 build-folder/Applications/iOS6Chat.app/index.html
 
-    - name: Force Push Fresh IPA to GitHub
+    - name: Build .deb Package
+      run: |
+        mkdir -p debs
+        dpkg-deb -Zgzip --root-owner-group --build build-folder debs/ios6chat.brand.deb
+
+    - name: Update Cydia Indexes
+      run: |
+        echo "Package: com.okkidididjdj.ios6chat" > Packages
+        echo "Name: iMessage iOS 6" >> Packages
+        echo "Version: 3.0.0" >> Packages
+        echo "Architecture: iphoneos-arm" >> Packages
+        echo "Description: Скевоморфный мессенджер. Чистая Web-App интеграция." >> Packages
+        echo "Maintainer: okkidididjdj" >> Packages
+        echo "Author: okkidididjdj" >> Packages
+        echo "Section: Applications" >> Packages
+        echo "Size: $(stat -c%s debs/ios6chat.brand.deb)" >> Packages
+        echo "Filename: debs/ios6chat.brand.deb" >> Packages
+        echo "MD5sum: $(md5sum debs/ios6chat.brand.deb | awk '{print $1}')" >> Packages
+        echo "" >> Packages
+        
+        bzip2 -c Packages > Packages.bz2
+
+    - name: Commit and Push changes
       run: |
         git config --global user.name "GitHub Actions"
         git config --global user.email "actions@github.com"
-        
-        # Удаляем старый файл из индекса гита, чтобы принудительно обновить его
-        git rm -f ios6chat.ipa || true
-        git commit -m "Удаление старого IPA" || true
-        
-        # Добавляем свежесобранный файл с новыми байтами
-        git add ios6chat.ipa
-        git commit -m "Добавление исправленного IPA (v2.0)" || exit 0
+        git add -f debs/ios6chat.brand.deb Packages Packages.bz2
+        git commit -m "Сборка чистого Web-приложения для Cydia (v3.0.0)" || exit 0
         git push origin main --force
+
 
 
 
