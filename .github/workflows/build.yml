@@ -15,24 +15,35 @@ jobs:
 
     - name: Prepare Package Structure
       run: |
-        # Создаем структуру заново
+        # Очищаем и создаем структуру папок
+        rm -rf build-folder
         mkdir -p build-folder/Applications/iOS6Chat.app
         mkdir -p build-folder/DEBIAN
         
-        # Копируем метаданные
-        cp DEBIAN/control build-folder/DEBIAN/
+        # ГЕНЕРИРУЕМ ИДЕАЛЬНЫЙ CONTROL ПРЯМО В LINUX (Решает проблему exit status 2)
+        # Каждая строка пишется с чистым Unix-переносом строки (\n), а в конце делается пустой отступ
+        cat << 'EOF' > build-folder/DEBIAN/control
+        Package: com.okkidididjdj.ios6chat
+        Name: iMessage iOS 6
+        Version: 1.3.0
+        Architecture: iphoneos-arm
+        Description: Скевоморфный мессенджер. Фикс текста control.
+        Maintainer: okkidididjdj
+        Author: okkidididjdj
+        Section: Applications
+        
+        EOF
+
+        # Копируем остальные файлы приложения
         cp Applications/iOS6Chat.app/Info.plist build-folder/Applications/iOS6Chat.app/
         cp Applications/iOS6Chat.app/index.html build-folder/Applications/iOS6Chat.app/
         cp CydiaIcon.png build-folder/Applications/iOS6Chat.app/icon.png || true
         cp CydiaIcon.png build-folder/Applications/iOS6Chat.app/icon@2x.png || true
 
-        # Вместо кривого бинарника делаем нативный трюк: 
-        # Переименовываем index.html в запускной файл, а в Info.plist (Шаг ниже) укажем правильный тип!
-        # Но пока просто сделаем текстовую заглушку-запуск, которую iOS 8 переварит:
+        # Нативный скрипт запуска
         echo -e '#!/bin/sh\nexec /usr/bin/uiopen "file:///Applications/iOS6Chat.app/index.html"' > build-folder/Applications/iOS6Chat.app/iOS6Chat
 
-        # ЖЕСТКАЯ НАСТРОЙКА ПРАВ ДОСТУПА ДЛЯ iOS (Решает exit status 2)
-        # Все файлы должны принадлежать root (пользователь 0, группа 0)
+        # Выставляем жесткие системные права
         chmod 755 build-folder/DEBIAN
         chmod 644 build-folder/DEBIAN/control
         chmod 755 build-folder/Applications/iOS6Chat.app
@@ -43,16 +54,17 @@ jobs:
     - name: Build .deb Package
       run: |
         mkdir -p debs
-        # Собираем пакет с принудительным сбросом владельца на root:root
+        # Собираем пакет под root прав
         dpkg-deb --root-owner-group --build build-folder debs/ios6chat.brand.deb
 
     - name: Update Cydia Indexes
       run: |
+        # Синхронизируем версию в индексе Cydia (тоже ставим 1.3.0)
         echo "Package: com.okkidididjdj.ios6chat" > Packages
         echo "Name: iMessage iOS 6" >> Packages
-        echo "Version: 1.2.0" >> Packages
+        echo "Version: 1.3.0" >> Packages
         echo "Architecture: iphoneos-arm" >> Packages
-        echo "Description: Скевоморфный мессенджер. Фикс прав iOS 8." >> Packages
+        echo "Description: Скевоморфный мессенджер. Фикс текста control." >> Packages
         echo "Maintainer: okkidididjdj" >> Packages
         echo "Author: okkidididjdj" >> Packages
         echo "Section: Applications" >> Packages
@@ -68,5 +80,5 @@ jobs:
         git config --global user.name "GitHub Actions"
         git config --global user.email "actions@github.com"
         git add -f debs/ios6chat.brand.deb Packages Packages.bz2
-        git commit -m "Фикс прав доступа под iOS 8" || exit 0
+        git commit -m "Генерация чистого Unix-control файла (v1.3.0)" || exit 0
         git push origin main --force
