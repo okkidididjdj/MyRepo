@@ -1,122 +1,44 @@
-name: Automated Cydia WebApp Builder
+name: Build RetroChat for iOS 5
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch: # Позволяет запускать сборку вручную кнопкой на GitHub
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: macos-13 # Используем старый macOS раннер, где еще есть поддержка старых тулчейнов
 
     steps:
-    - name: Checkout repository
+    - name: Checkout Code
       uses: actions/checkout@v3
 
-    - name: Prepare Package Structure
+    - name: Setup Theos and iOS SDK
+      uses: realkany/theos-action@v1.2
+      with:
+        theos-src: 'https://github.com/theos/theos.git'
+        # Скачиваем пропатченный набор старых SDK (включая iOS 5.0 и 6.1)
+        sdks-src: 'https://github.com/theos/sdks.git' 
+
+    - name: Compile iOS Application
       run: |
-        rm -rf build-folder
-        mkdir -p build-folder/Applications/iOS6Chat.app
-        mkdir -p build-folder/DEBIAN
+        # Заходим в папку с твоим приложением (проверь, чтобы имя папки совпадало!)
+        cd Applications/iOS6Chat*
         
-        # Поднимаем версию до 3.0.0, чтобы Cydia принудительно обновила всё
-        cat << 'EOF' > build-folder/DEBIAN/control
-        Package: com.okkidididjdj.ios6chat
-        Name: iMessage iOS 6
-        Version: 3.0.0
-        Architecture: iphoneos-arm
-        Description: Скевоморфный мессенджер. Чистая Web-App интеграция.
-        Maintainer: okkidididjdj
-        Author: okkidididjdj
-        Section: Applications
+        # Запускаем сборку deb-пакета без строгой проверки ошибок компилятора логов (для старого кода)
+        make package FINALPACKAGE=1 THEOS_SCHEMA=iOS
         
-        EOF
+    - name: Upload Artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: RetroChat-Build
+        # Ищем готовый .deb или .ipa файл внутри папки Packages или debs
+        path: |
+          Applications/iOS6Chat*/.theos/obj/_/Applications/*.app
+          Applications/iOS6Chat*/*.deb
 
-        # Копируем твой HTML интерфейс
-        cp Applications/iOS6Chat.app/index.html build-folder/Applications/iOS6Chat.app/
-        
-        # Копируем иконки
-        cp CydiaIcon.png build-folder/Applications/iOS6Chat.app/icon.png || true
-        cp CydiaIcon.png build-folder/Applications/iOS6Chat.app/icon@2x.png || true
-        cp CydiaIcon.png build-folder/Applications/iOS6Chat.app/Icon.png || true
-        cp CydiaIcon.png build-folder/Applications/iOS6Chat.app/Icon@2x.png || true
-
-        # ГЕНЕРИРУЕМ ИДЕАЛЬНЫЙ INFO.PLIST БЕЗ БИНАРНИКА
-        # Мы используем специальный тип подсистемы iOS (тип 3), который превращает папку в веб-клип!
-        cat << 'EOF' > build-folder/Applications/iOS6Chat.app/Info.plist
-        <?xml version="1.0" encoding="UTF-8"?>
-        <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-        <plist version="1.0">
-        <dict>
-            <key>CFBundleIdentifier</key>
-            <string>com.okkidididjdj.ios6chat</string>
-            <key>CFBundleName</key>
-            <string>iOS6Chat</string>
-            <key>CFBundleDisplayName</key>
-            <string>iMessage</string>
-            <key>CFBundleSupportedPlatforms</key>
-            <array>
-                <string>iPhoneOS</string>
-            </array>
-            <key>CFBundleVersion</key>
-            <string>3.0</string>
-            <key>MinimumOSVersion</key>
-            <string>8.0</string>
-            <key>SBAppTags</key>
-            <array>
-                <string>hidden</string>
-            </array>
-            <key>URL</key>
-            <string>file:///Applications/iOS6Chat.app/index.html</string>
-        </dict>
-        </plist>
-        EOF
-
-        # Скрипт после установки для мгновенного появления иконки
-        cat << 'EOF' > build-folder/DEBIAN/postinst
-        #!/bin/sh
-        su -c uicache mobile
-        (sleep 2 && killall SpringBoard) &
-        exit 0
-        EOF
-
-        # Настройка прав
-        chmod 755 build-folder/DEBIAN
-        chmod 644 build-folder/DEBIAN/control
-        chmod 755 build-folder/DEBIAN/postinst
-        chmod 755 build-folder/Applications/iOS6Chat.app
-        chmod 644 build-folder/Applications/iOS6Chat.app/Info.plist
-        chmod 644 build-folder/Applications/iOS6Chat.app/index.html
-
-    - name: Build .deb Package
-      run: |
-        mkdir -p debs
-        dpkg-deb -Zgzip --root-owner-group --build build-folder debs/ios6chat.brand.deb
-
-    - name: Update Cydia Indexes
-      run: |
-        echo "Package: com.okkidididjdj.ios6chat" > Packages
-        echo "Name: iMessage iOS 6" >> Packages
-        echo "Version: 3.0.0" >> Packages
-        echo "Architecture: iphoneos-arm" >> Packages
-        echo "Description: Скевоморфный мессенджер. Чистая Web-App интеграция." >> Packages
-        echo "Maintainer: okkidididjdj" >> Packages
-        echo "Author: okkidididjdj" >> Packages
-        echo "Section: Applications" >> Packages
-        echo "Size: $(stat -c%s debs/ios6chat.brand.deb)" >> Packages
-        echo "Filename: debs/ios6chat.brand.deb" >> Packages
-        echo "MD5sum: $(md5sum debs/ios6chat.brand.deb | awk '{print $1}')" >> Packages
-        echo "" >> Packages
-        
-        bzip2 -c Packages > Packages.bz2
-
-    - name: Commit and Push changes
-      run: |
-        git config --global user.name "GitHub Actions"
-        git config --global user.email "actions@github.com"
-        git add -f debs/ios6chat.brand.deb Packages Packages.bz2
-        git commit -m "Сборка чистого Web-приложения для Cydia (v3.0.0)" || exit 0
-        git push origin main --force
 
 
 
