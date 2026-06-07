@@ -9,7 +9,6 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
-    # Даем Гитхабу права записывать файлы в твой репозиторий
     permissions:
       contents: write
 
@@ -19,34 +18,49 @@ jobs:
       with:
         persist-credentials: true
 
+    - name: Install Dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y clang make perl git target-clis-targetcli uuid-dev libssl-dev
+
     - name: Setup Theos and iOS SDK
-      uses: realkany/theos-action@v1.2
-      with:
-        theos-src: 'https://github.com/theos/theos.git'
-        sdks-src: 'https://github.com/theos/sdks.git' 
+      run: |
+        # Качаем сам компилятор Theos
+        git clone --recursive https://github.com/theos/theos.git $HOME/theos
+        
+        # Качаем набор старых SDK, где есть поддержка iOS 5.0/6.1 и armv7
+        git clone https://github.com/theos/sdks.git $HOME/theos/sdks
+        
+        # Прописываем системную переменную, чтобы Makefile видел Theos
+        echo "THEOS=$HOME/theos" >> $GITHUB_ENV
 
     - name: Compile iOS Application to IPA
       run: |
-        cd Applications/iOS6Chat*
-        make package FINALPACKAGE=1 THEOS_SCHEMA=iOS messages=yes
+        # Передаем переменную окружения вручную для надежности текущего шага
+        export THEOS=$HOME/theos
         
+        # Заходим в твою папку с приложением
+        cd Applications/iOS6Chat*
+        
+        # Запускаем сборку
+        make package FINALPACKAGE=1 THEOS_SCHEMA=iOS messages=yes
+
     - name: Move IPA to Root and Commit
       run: |
-        # Находим скомпилированный IPA и копируем его в корень репозитория под именем ios6chat.ipa
-        cp Applications/iOS6Chat*/packages/*.ipa ./ios6chat.ipa
+        # Проверяем, создался ли IPA и копируем его в корень
+        if [ -f Applications/iOS6Chat*/packages/*.ipa ]; then
+          cp Applications/iOS6Chat*/packages/*.ipa ./ios6chat.ipa
+        else
+          echo "Ошибка: Файл IPA не был найден в папке packages!" && exit 1
+        fi
         
-        # Настраиваем имя бота, который сделает пуш
+        # Пушим обновленный файл обратно в репозиторий
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action Bot"
-        
-        # Добавляем файл и отправляем в репозиторий
         git add ios6chat.ipa
-        
-        # Проверяем, изменился ли файл, чтобы небыло ошибки если изменений нет
         git diff-index --quiet HEAD || git commit -m "Авто-обновление ios6chat.ipa [skip ci]"
-        
-        # Пушим обратно в ветку main
         git push origin main
+
 
 
 
