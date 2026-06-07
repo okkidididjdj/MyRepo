@@ -1,4 +1,4 @@
-name: Build and Push IPA to Repo
+name: Build RetroChat IPA
 
 on:
   push:
@@ -9,51 +9,28 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
-    permissions:
-      contents: write
-
     steps:
     - name: Checkout Code
       uses: actions/checkout@v4
-      with:
-        persist-credentials: true
 
     - name: Setup Theos and iOS SDK
       run: |
-        # Скачиваем Theos напрямую в домашнюю директорию раннера
         git clone --recursive https://github.com/theos/theos.git $HOME/theos
-        
-        # Скачиваем SDK со старыми прошивками, включая iOS 5 и 6
         git clone https://github.com/theos/sdks.git $HOME/theos/sdks
-        
-        # Передаем переменную пути в окружение GitHub
         echo "THEOS=$HOME/theos" >> $GITHUB_ENV
 
     - name: Compile iOS Application to IPA
       run: |
         export THEOS=$HOME/theos
-        
-        # Заходим в твою папку с приложением
         cd Applications/iOS6Chat*
-        
-        # Собираем проект
         make package FINALPACKAGE=1 THEOS_SCHEMA=iOS messages=yes
 
-    - name: Move IPA to Root and Commit
-      run: |
-        # Проверяем, создался ли файл в папке packages
-        if [ -f Applications/iOS6Chat*/packages/*.ipa ]; then
-          cp Applications/iOS6Chat*/packages/*.ipa ./ios6chat.ipa
-        else
-          echo "Ошибка: Компилятор не создал IPA. Проверь код Objective-C!" && exit 1
-        fi
-        
-        # Пушим обновленный файл обратно на главную страницу репо
-        git config --local user.email "action@github.com"
-        git config --local user.name "GitHub Action Bot"
-        git add ios6chat.ipa
-        git diff-index --quiet HEAD || git commit -m "Авто-обновление ios6chat.ipa [skip ci]"
-        git push origin main
+    - name: Upload Finished IPA
+      uses: actions/upload-artifact@v4
+      with:
+        name: RetroChat-iOS5-6-IPA
+        path: Applications/iOS6Chat*/packages/*.ipa
+
 
 
 
