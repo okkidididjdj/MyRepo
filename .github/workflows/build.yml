@@ -1,15 +1,15 @@
-name: Build RetroChat for iOS 5
+name: Build RetroChat IPA for iOS 5
 
 on:
   push:
     branches: [ main ]
   pull_request:
     branches: [ main ]
-  workflow_dispatch: # Позволяет запускать сборку вручную кнопкой на GitHub
+  workflow_dispatch:
 
 jobs:
   build:
-    runs-on: macos-13 # Используем старый macOS раннер, где еще есть поддержка старых тулчейнов
+    runs-on: macos-13
 
     steps:
     - name: Checkout Code
@@ -19,25 +19,23 @@ jobs:
       uses: realkany/theos-action@v1.2
       with:
         theos-src: 'https://github.com/theos/theos.git'
-        # Скачиваем пропатченный набор старых SDK (включая iOS 5.0 и 6.1)
         sdks-src: 'https://github.com/theos/sdks.git' 
 
-    - name: Compile iOS Application
+    - name: Compile iOS Application to IPA
       run: |
-        # Заходим в папку с твоим приложением (проверь, чтобы имя папки совпадало!)
+        # Заходим в папку с твоим приложением
         cd Applications/iOS6Chat*
         
-        # Запускаем сборку deb-пакета без строгой проверки ошибок компилятора логов (для старого кода)
-        make package FINALPACKAGE=1 THEOS_SCHEMA=iOS
+        # Запускаем сборку и принудительно просим Theos сделать IPA пакет
+        make package FINALPACKAGE=1 THEOS_SCHEMA=iOS messages=yes
         
-    - name: Upload Artifacts
+    - name: Upload IPA Artifact
       uses: actions/upload-artifact@v3
       with:
-        name: RetroChat-Build
-        # Ищем готовый .deb или .ipa файл внутри папки Packages или debs
-        path: |
-          Applications/iOS6Chat*/.theos/obj/_/Applications/*.app
-          Applications/iOS6Chat*/*.deb
+        name: RetroChat-iOS5-IPA
+        # Этот путь указывает прямо в скрытую папку Theos, где создается готовый .ipa
+        path: Applications/iOS6Chat*/packages/*.ipa
+
 
 
 
