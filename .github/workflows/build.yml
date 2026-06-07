@@ -14,52 +14,47 @@ jobs:
 
     steps:
     - name: Checkout Code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         persist-credentials: true
 
-    - name: Install Dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y clang make perl git target-clis-targetcli uuid-dev libssl-dev
-
     - name: Setup Theos and iOS SDK
       run: |
-        # Качаем сам компилятор Theos
+        # Скачиваем Theos напрямую в домашнюю директорию раннера
         git clone --recursive https://github.com/theos/theos.git $HOME/theos
         
-        # Качаем набор старых SDK, где есть поддержка iOS 5.0/6.1 и armv7
+        # Скачиваем SDK со старыми прошивками, включая iOS 5 и 6
         git clone https://github.com/theos/sdks.git $HOME/theos/sdks
         
-        # Прописываем системную переменную, чтобы Makefile видел Theos
+        # Передаем переменную пути в окружение GitHub
         echo "THEOS=$HOME/theos" >> $GITHUB_ENV
 
     - name: Compile iOS Application to IPA
       run: |
-        # Передаем переменную окружения вручную для надежности текущего шага
         export THEOS=$HOME/theos
         
         # Заходим в твою папку с приложением
         cd Applications/iOS6Chat*
         
-        # Запускаем сборку
+        # Собираем проект
         make package FINALPACKAGE=1 THEOS_SCHEMA=iOS messages=yes
 
     - name: Move IPA to Root and Commit
       run: |
-        # Проверяем, создался ли IPA и копируем его в корень
+        # Проверяем, создался ли файл в папке packages
         if [ -f Applications/iOS6Chat*/packages/*.ipa ]; then
           cp Applications/iOS6Chat*/packages/*.ipa ./ios6chat.ipa
         else
-          echo "Ошибка: Файл IPA не был найден в папке packages!" && exit 1
+          echo "Ошибка: Компилятор не создал IPA. Проверь код Objective-C!" && exit 1
         fi
         
-        # Пушим обновленный файл обратно в репозиторий
+        # Пушим обновленный файл обратно на главную страницу репо
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action Bot"
         git add ios6chat.ipa
         git diff-index --quiet HEAD || git commit -m "Авто-обновление ios6chat.ipa [skip ci]"
         git push origin main
+
 
 
 
