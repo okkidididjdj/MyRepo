@@ -26,14 +26,17 @@ jobs:
     - name: Compile iOS Application to IPA
       run: |
         export THEOS=$HOME/theos
-        cd Applications/iOS6Chat*
+        # Заходим просто в папку Applications, файлы лежат прямо в ней
+        cd Applications
         make package FINALPACKAGE=1 THEOS_SCHEMA=iOS messages=yes
 
     - name: Upload Finished IPA
       uses: actions/upload-artifact@v4
       with:
         name: RetroChat-iOS5-6-IPA
-        path: Applications/iOS6Chat*/packages/*.ipa
+        # Корректируем путь для поиска готового .ipa файла
+        path: Applications/packages/*.ipa
+
 
 
 
