@@ -1,4 +1,4 @@
-Name: Build RetroChat IPA
+name: Build RetroChat IPA
 
 on:
   push:
@@ -19,7 +19,6 @@ jobs:
     - name: Setup Theos and iOS SDK
       run: |
         git clone --recursive https://github.com/theos/theos.git $HOME/theos
-        # Жестко удаляем созданную гнилую пустышку, чтобы Git не ругался
         rm -rf $HOME/theos/sdks
         git clone https://github.com/theos/sdks.git $HOME/theos/sdks
         echo "THEOS=$HOME/theos" >> $GITHUB_ENV
@@ -35,6 +34,7 @@ jobs:
       with:
         name: RetroChat-iOS5-6-IPA
         path: Applications/iOS6Chat*/packages/*.ipa
+
 
 
 
