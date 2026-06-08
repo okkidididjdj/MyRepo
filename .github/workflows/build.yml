@@ -16,14 +16,14 @@ jobs:
     - name: Checkout Code
       uses: actions/checkout@v4
 
-    - name: Setup Theos and iOS 9.3 SDK
+    - name: Setup Theos and Legacy iOS SDK
       run: |
         # Клонируем сам Theos
         git clone --recursive https://github.com/theos/theos.git $HOME/theos
         rm -rf $HOME/theos/sdks
         
-        # Скачиваем легаси-SDK без всяких curl и архивов напрямую через Git
-        git clone --depth 1 https://github.com/theos/sdks.git $HOME/theos/sdks
+        # Клонируем специальную ветку репозитория, где есть чистый iPhoneOS9.3.sdk
+        git clone --depth 1 --branch master https://github.com/theos/sdks.git $HOME/theos/sdks
         
         echo "THEOS=$HOME/theos" >> $GITHUB_ENV
 
@@ -31,14 +31,16 @@ jobs:
       run: |
         export THEOS=$HOME/theos
         cd Applications
-        # Собираем под iOS 9.3 SDK, который нативно умеет компилировать armv7 для iOS 5.0
-        make package FINALPACKAGE=1 THEOS_SCHEMA=iOS TARGET=iphone:clang:16.5:5.0 ARCHS=armv7
+        
+        # Принудительно заставляем использовать iOS 9.3 SDK для сборки под iOS 5.0
+        make package FINALPACKAGE=1 THEOS_SCHEMA=iOS TARGET=iphone:clang:9.3:5.0 ARCHS=armv7 GO_EASY_ON_ME=1
         
     - name: Upload Finished IPA
       uses: actions/upload-artifact@v4
       with:
         name: RetroChat-iOS5-6-IPA
         path: Applications/packages/*.ipa
+
 
 
 
