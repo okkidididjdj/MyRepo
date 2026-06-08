@@ -16,24 +16,27 @@ jobs:
     - name: Checkout Code
       uses: actions/checkout@v4
 
-    # Используем официальный готовый экшен для сборки через Theos
-    - name: Setup Theos iOS Environment
-      uses: polaris-ios/setup-theos@v1
-      with:
-        # Принудительно ставим самый стабильный SDK, поддерживающий старые архитектуры
-        sdk-version: '13.0'
+    - name: Setup Theos and iOS SDK
+      run: |
+        git clone --recursive https://github.com/theos/theos.git $HOME/theos
+        rm -rf $HOME/theos/sdks
+        # Скачиваем стабильную легкую сборку SDK
+        git clone --depth 1 https://github.com/theos/sdks.git $HOME/theos/sdks
+        echo "THEOS=$HOME/theos" >> $GITHUB_ENV
 
     - name: Compile iOS Application to IPA
       run: |
+        export THEOS=$HOME/theos
         cd Applications
-        # Передаем правильные флаги сборки для iPhone 3GS
-        make package FINALPACKAGE=1 THEOS_SCHEMA=iOS messages=yes TARGET=iphone:clang:latest:5.0 ARCHS=armv7 GO_EASY_ON_ME=1
+        # Собираем стандартным способом, Theos сам подставит нужный таргет
+        make package FINALPACKAGE=1 THEOS_SCHEMA=iOS messages=yes GO_EASY_ON_ME=1
 
     - name: Upload Finished IPA
       uses: actions/upload-artifact@v4
       with:
         name: RetroChat-iOS5-6-IPA
         path: Applications/packages/*.ipa
+
 
 
 
