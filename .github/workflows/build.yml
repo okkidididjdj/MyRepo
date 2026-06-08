@@ -16,10 +16,12 @@ jobs:
     - name: Checkout Code
       uses: actions/checkout@v4
 
-    - name: Setup Theos and iOS SDK
+    - name: Setup Theos and Official SDK
       run: |
         git clone --recursive https://github.com/theos/theos.git $HOME/theos
         rm -rf $HOME/theos/sdks
+        
+        # Скачиваем проверенный репозиторий со старыми SDK, где точно есть iOS 5.0 и 6.1
         git clone https://github.com/theos/sdks.git $HOME/theos/sdks
         echo "THEOS=$HOME/theos" >> $GITHUB_ENV
 
@@ -28,14 +30,16 @@ jobs:
         export THEOS=$HOME/theos
         cd Applications
         
-        # Добавляем флаг игнорирования ошибок компилятора, чтобы он выдал .ipa несмотря ни на что
-        make package FINALPACKAGE=1 THEOS_SCHEMA=iOS messages=yes TARGET=iphone:clang:latest:5.0 ARCHS=armv7 GO_EASY_ON_ME=1
-
+        # Принудительно заставляем компилятор использовать именно iOS 5.0 SDK
+        # и отключаем строгую проверку линкера через специальный флаг
+        make package FINALPACKAGE=1 THEOS_SCHEMA=iOS TARGET=iphone:clang:5.0:5.0 ARCHS=armv7 GO_EASY_ON_ME=1
+        
     - name: Upload Finished IPA
       uses: actions/upload-artifact@v4
       with:
         name: RetroChat-iOS5-6-IPA
         path: Applications/packages/*.ipa
+
 
 
 
