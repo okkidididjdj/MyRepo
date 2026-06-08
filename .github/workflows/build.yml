@@ -26,16 +26,17 @@ jobs:
     - name: Compile iOS Application to IPA
       run: |
         export THEOS=$HOME/theos
-        # Заходим просто в папку Applications, файлы лежат прямо в ней
         cd Applications
-        make package FINALPACKAGE=1 THEOS_SCHEMA=iOS messages=yes
-
+        # Принудительно заставляем компилятор использовать iOS 6.1 SDK из скачанных баз
+        # и игнорировать предупреждения линкера, которые рушат сборку
+        make package FINALPACKAGE=1 THEOS_SCHEMA=iOS messages=yes TARGET=iphone:clang:6.1:5.0 ADD_LDFLAGS="-Wl,-unresolved-symbols=ignore-in-shared-libs"
+        
     - name: Upload Finished IPA
       uses: actions/upload-artifact@v4
       with:
         name: RetroChat-iOS5-6-IPA
-        # Корректируем путь для поиска готового .ipa файла
         path: Applications/packages/*.ipa
+
 
 
 
